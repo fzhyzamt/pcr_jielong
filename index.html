@@ -126,7 +126,7 @@
         }
 
         function isMatchWord(e, selectWord) {
-            if (selectWord === null || headWord === selectWord) {
+            if (selectWord === null || e.head === selectWord) {
                 return true;
             }
             return window.pcr.SAME_META.some(set => set.has(selectWord) && set.has(e.head));
