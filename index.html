@@ -19,7 +19,7 @@
             width: 100%;
             margin: 0px auto;
             line-height: 30px;
-            clear:both;
+            clear: both;
         }
 
         #meta>div {
@@ -38,7 +38,7 @@
         #game {
             min-height: 100px;
             width: 100%;
-            clear:both;
+            clear: both;
         }
 
         #game>div {
@@ -69,19 +69,19 @@
         <div id="meta">Loading...</div>
         <div id="game"></div>
         <footer>
-            <span>图片来源：<a href="https://redive.estertion.win/">干炸里脊資源站</a></span>
+            <span>图片来源：<a target="_blank" href="https://redive.estertion.win/">干炸里脊資源站</a></span>
             <br />
-            <span>数据取自：<a href="https://hanshino.nctu.me/online/KyaruMiniGame">龍的探索者們 小遊戲單字表</a></span>
+            <span>数据取自：<a target="_blank" href="https://hanshino.nctu.me/online/KyaruMiniGame">龍的探索者們 小遊戲單字表</a></span>
         </footer>
     </div>
     <script>
         window.pcr = new Object;
-        window.pcr.MAX_COL = 5;
 
         $.ajax('data.json')
             .done(data => {
                 window.pcr.META = data.meta;
                 window.pcr.DATA_ARRAY = data.data;
+                window.pcr.SAME_META = data.sameMeta;
                 initData();
             });
 
@@ -93,26 +93,45 @@
             });
             $('#meta').on('click', 'div', e => {
                 let divText = e.currentTarget.textContent.trim();
-                process([divText]);
+                process(divText);
             });
             process(null);
         }
 
-        function process(words) {
+        function process(word) {
             const gameTable = $("#game");
-            const dataArray = [];
+            let dataArray = [];
             window.pcr.DATA_ARRAY.forEach(e => {
-                if (words === null) {
+                if (isMatchWord(e, word)) {
                     dataArray.push(e);
-                    return;
                 }
-                words.forEach(word => {
-                    if (e.head === word) {
-                        dataArray.push(e);
-                    }
+            });
+            dataArray = sort(dataArray);
+            draw(dataArray);
+        }
+
+        function sort(dataArray) {
+            // TODO 按照分数以及是否点击过排序
+            return dataArray;
+        }
+
+        function isMatchWord(e, selectWord) {
+            if (selectWord === null) {
+                return true;
+            }
+            const headWord = e.head;
+            if (headWord === selectWord) {
+                return true;
+            }
+            const sameArr = window.pcr.SAME_META.find(arr => {
+                return arr.find(o => {
+                    return o === selectWord;
                 });
             });
-            draw(dataArray);
+            if (sameArr !== undefined) {
+                return sameArr.some(o => o === headWord);
+            }
+            return false;
         }
 
         function draw(configArray) {
@@ -122,9 +141,9 @@
                 gameDiv.append($(`<div tail="${config.tail}">
                     <div class="icon" icon-id="${config.iconID}"></div>
                     </div>`).on('click', (e) => {
-                        let tailText = e.currentTarget.getAttribute("tail");
-                        process([tailText]);
-                    }));
+                    let tailText = e.currentTarget.getAttribute("tail");
+                    process(tailText);
+                }));
             });
         }
     </script>
