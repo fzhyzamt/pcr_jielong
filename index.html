@@ -133,30 +133,30 @@
         }
 
         function draw(configArray) {
-            const gameDiv = $("#game");
+            const gameDiv = $('#game');
             gameDiv.empty();
             configArray.forEach(config => {
-                gameDiv.append($(`<div tail="${config.tail}" data-name="${config.name}">
+                gameDiv.append($(`<div tail="${config.tail}" data-name="${config.name}" data-icon-id="${config.iconID}">
                     <div class="icon" icon-id="${config.iconID}">
-                        ${isClicked(config.name) ? '<img src="dui.png" class="clicked"/>' : ""}
+                        ${isClicked(config.name, config.iconID) ? '<img src="dui.png" class="clicked"/>' : ""}
                     </div>
                     </div>`).on('click', (e) => {
-                    addClickHistory(e.currentTarget.getAttribute("data-name"));
-                    process(e.currentTarget.getAttribute("tail"));
+                    addClickHistory(e.currentTarget.getAttribute('data-name'), e.currentTarget.getAttribute('data-icon-id'));
+                    process(e.currentTarget.getAttribute('tail'));
                 }));
             });
         }
 
-        function addClickHistory(name) {
-            if (isClicked(name)) {
+        function addClickHistory(name, iconID) {
+            if (isClicked(name, iconID)) {
                 return;
             }
-            window.pcr.clickHistory.add(name);
+            window.pcr.clickHistory.add(iconID + name);
             localStorage.setItem("clickedHistory", JSON.stringify(Array.from(window.pcr.clickHistory)));
         }
 
-        function isClicked(name) {
-            return window.pcr.clickHistory.has(name);
+        function isClicked(name, iconID) {
+            return window.pcr.clickHistory.has(iconID + name);
         }
     </script>
 </body>
