@@ -85,6 +85,7 @@
         <div id="help">左键点击图片将标记为已选择过并显示其接龙, 右键单击图片将不标记仅继续接龙, 用于非玩家回合时使用</div>
         <div id="util">
             <input id="clearClickHistory" type="button" value="清除点击记录" />
+            <input id="showName" type="checkbox" /> 显示名称
         </div>
         <div id="meta">Loading...</div>
         <div id="game"></div>
@@ -106,10 +107,16 @@
                 data.sameMeta.forEach(arr => window.pcr.SAME_META.push(new Set(arr)));
                 initData();
             });
-        
+
         $("#clearClickHistory").click(e => {
             localStorage.removeItem('clickedHistory');
             window.pcr.clickHistory.clear();
+            reProcess();
+        });
+
+        $("#showName").click(e => {
+            window.pcr.showName = e.currentTarget.is(':checked');
+            reProcess();
         });
 
         function initData() {
@@ -125,6 +132,10 @@
             process(null);
         }
 
+        function reProcess() {
+            draw(window.pcr.preDataArray);
+        }
+
         function process(word) {
             const gameTable = $("#game");
             let dataArray = [];
@@ -134,6 +145,7 @@
                 }
             });
             dataArray = sort(dataArray);
+            window.pcr.preDataArray = dataArray;
             draw(dataArray);
         }
 
@@ -156,6 +168,7 @@
                 gameDiv.append($(`<div tail="${config.tail}" data-name="${config.name}" data-icon-id="${config.iconID}">
                     <div class="icon" icon-id="${config.iconID}">
                         ${isClicked(config.name, config.iconID) ? '<img src="dui.png" class="clicked"/>' : ""}
+                        ${window.pcr.showName ? <span>${config.name}</span> : ''}
                     </div>
                     </div>`).mousedown((e) => {
                     switch (e.which) {
