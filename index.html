@@ -84,7 +84,7 @@
     </div>
     <script>
         window.pcr = new Object;
-        window.pcr.clickHistory = JSON.parse(localStorage.getItem("clickedHistory") || '[]');
+        window.pcr.clickHistory = new Set(JSON.parse(localStorage.getItem("clickedHistory") || '[]'));
 
         $.ajax('data.json')
             .done(data => {
@@ -160,14 +160,12 @@
         }
 
         function addClickHistory(name) {
-            window.pcr.clickHistory.push(name);
-            localStorage.setItem("clickedHistory", JSON.stringify(window.pcr.clickHistory));
+            window.pcr.clickHistory.add(name);
+            localStorage.setItem("clickedHistory", JSON.stringify(Array.from(window.pcr.clickHistory)));
         }
 
         function isClicked(config) {
-            const find = window.pcr.clickHistory.find(o => o === config.name);
-
-            return find !== undefined;
+            return window.pcr.clickHistory.has(config.name);
         }
     </script>
 </body>
