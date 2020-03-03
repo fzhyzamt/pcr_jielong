@@ -57,7 +57,15 @@
         }
 
         .icon {
+            position: relative;
             background-image: url(https://i.loli.net/2020/03/03/sIZwimkEDNQ82Yl.png);
+        }
+
+        .clicked {
+            display: inline-block;
+            position: absolute;
+            right: 10px;
+            bottom: 10px;
         }
     </style>
     <link rel="stylesheet" href="icon.css">
@@ -76,6 +84,7 @@
     </div>
     <script>
         window.pcr = new Object;
+        window.pcr.clickHistory = JSON.parse(localStorage.getItem("clickedHistory") || '[]');
 
         $.ajax('data.json')
             .done(data => {
@@ -138,13 +147,27 @@
             const gameDiv = $("#game");
             gameDiv.empty();
             configArray.forEach(config => {
-                gameDiv.append($(`<div tail="${config.tail}">
-                    <div class="icon" icon-id="${config.iconID}"></div>
+                gameDiv.append($(`<div tail="${config.tail}" data-name="${config.name}">
+                    <div class="icon" icon-id="${config.iconID}">
+                        ${isClicked(config) ? '<img src="dui.png" class="clicked"/>' : ""}
+                    </div>
                     </div>`).on('click', (e) => {
                     let tailText = e.currentTarget.getAttribute("tail");
+                    addClickHistory(e.currentTarget.getAttribute("data-name"));
                     process(tailText);
                 }));
             });
+        }
+
+        function addClickHistory(name) {
+            window.pcr.clickHistory.push(name);
+            localStorage.setItem("clickedHistory", JSON.stringify(window.pcr.clickHistory));
+        }
+
+        function isClicked(config) {
+            const find = window.pcr.clickHistory.find(o => o === config.name);
+
+            return find !== undefined;
         }
     </script>
 </body>
