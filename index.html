@@ -95,12 +95,17 @@
                 let divText = e.currentTarget.textContent.trim();
                 process([divText]);
             });
+            process(null);
         }
 
         function process(words) {
             const gameTable = $("#game");
             const dataArray = [];
             window.pcr.DATA_ARRAY.forEach(e => {
+                if (words === null) {
+                    dataArray.push(e);
+                    return;
+                }
                 words.forEach(word => {
                     if (e.head === word) {
                         dataArray.push(e);
