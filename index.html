@@ -90,7 +90,8 @@
             .done(data => {
                 window.pcr.META = data.meta;
                 window.pcr.DATA_ARRAY = data.data;
-                window.pcr.SAME_META = data.sameMeta;
+                window.pcr.SAME_META = [];
+                data.sameMeta.forEach(arr => window.pcr.SAME_META.push(new Set(arr)));
                 initData();
             });
 
@@ -125,22 +126,10 @@
         }
 
         function isMatchWord(e, selectWord) {
-            if (selectWord === null) {
+            if (selectWord === null || headWord === selectWord) {
                 return true;
             }
-            const headWord = e.head;
-            if (headWord === selectWord) {
-                return true;
-            }
-            const sameArr = window.pcr.SAME_META.find(arr => {
-                return arr.find(o => {
-                    return o === selectWord;
-                });
-            });
-            if (sameArr !== undefined) {
-                return sameArr.some(o => o === headWord);
-            }
-            return false;
+            return window.pcr.SAME_META.some(set => set.has(selectWord) && set.has(e.head));
         }
 
         function draw(configArray) {
@@ -149,23 +138,25 @@
             configArray.forEach(config => {
                 gameDiv.append($(`<div tail="${config.tail}" data-name="${config.name}">
                     <div class="icon" icon-id="${config.iconID}">
-                        ${isClicked(config) ? '<img src="dui.png" class="clicked"/>' : ""}
+                        ${isClicked(config.name) ? '<img src="dui.png" class="clicked"/>' : ""}
                     </div>
                     </div>`).on('click', (e) => {
-                    let tailText = e.currentTarget.getAttribute("tail");
                     addClickHistory(e.currentTarget.getAttribute("data-name"));
-                    process(tailText);
+                    process(e.currentTarget.getAttribute("tail"));
                 }));
             });
         }
 
         function addClickHistory(name) {
+            if (isClicked(name)) {
+                return;
+            }
             window.pcr.clickHistory.add(name);
             localStorage.setItem("clickedHistory", JSON.stringify(Array.from(window.pcr.clickHistory)));
         }
 
-        function isClicked(config) {
-            return window.pcr.clickHistory.has(config.name);
+        function isClicked(name) {
+            return window.pcr.clickHistory.has(name);
         }
     </script>
 </body>
