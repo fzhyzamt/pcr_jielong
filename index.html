@@ -15,6 +15,14 @@
             margin: 10px auto;
         }
 
+        #help {
+            text-align: left;
+        }
+
+        #util {
+            text-align: left;
+        }
+
         #meta {
             width: 100%;
             margin: 0px auto;
@@ -74,6 +82,10 @@
 <body>
     <div id="container">
         <img src="https://i.loli.net/2020/03/03/sIZwimkEDNQ82Yl.png" style="display: none;width: 0;height: 0;">
+        <div id="help">左键点击图片将标记为已选择过并显示其接龙, 右键单击图片将不标记仅继续接龙, 用于非玩家回合时使用</div>
+        <div id="util">
+            <input id="clearClickHistory" type="button" value="清除点击记录" />
+        </div>
         <div id="meta">Loading...</div>
         <div id="game"></div>
         <footer>
@@ -94,6 +106,11 @@
                 data.sameMeta.forEach(arr => window.pcr.SAME_META.push(new Set(arr)));
                 initData();
             });
+        
+        $("#clearClickHistory").click(e => {
+            localStorage.removeItem('clickedHistory');
+            window.pcr.clickHistory.clear();
+        });
 
         function initData() {
             const metaDiv = $("#meta");
@@ -140,10 +157,21 @@
                     <div class="icon" icon-id="${config.iconID}">
                         ${isClicked(config.name, config.iconID) ? '<img src="dui.png" class="clicked"/>' : ""}
                     </div>
-                    </div>`).on('click', (e) => {
-                    addClickHistory(e.currentTarget.getAttribute('data-name'), e.currentTarget.getAttribute('data-icon-id'));
-                    process(e.currentTarget.getAttribute('tail'));
-                }));
+                    </div>`).mousedown((e) => {
+                    switch (e.which) {
+                        case 1:
+                            addClickHistory(e.currentTarget.getAttribute('data-name'), e.currentTarget.getAttribute('data-icon-id'));
+                            process(e.currentTarget.getAttribute('tail'));
+                            break;
+                        case 3:
+                            process(e.currentTarget.getAttribute('tail'));
+                            break;
+                        case 2:
+                            break;
+                        default:
+                            break;
+                    }
+                }).bind('contextmenu', e => false)); // 为了支持右键点击, 禁用右键菜单
             });
         }
 
