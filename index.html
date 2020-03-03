@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"></script>
+
+    <style>
+        * {
+            text-align: center;
+        }
+
+        #container {
+            width: 700px;
+            margin: 10px auto;
+        }
+
+        #meta {
+            width: 100%;
+            margin: 0px auto;
+            line-height: 30px;
+            clear:both;
+        }
+
+        #meta>div {
+            float: left;
+            width: 50px;
+            height: 30px;
+            background-color: #EEE;
+            align-self: center;
+            cursor: pointer;
+        }
+
+        #meta>div:hover {
+            background-color: #CCC;
+        }
+
+        #game {
+            min-height: 100px;
+            width: 100%;
+            clear:both;
+        }
+
+        #game>div {
+            float: left;
+            height: 80px;
+        }
+
+        #game .icon {
+            height: 78px;
+            width: 78px;
+            margin: 1px;
+        }
+
+        footer {
+            clear: both;
+        }
+
+        .icon {
+            background-image: url(icons.png);
+        }
+    </style>
+    <link rel="stylesheet" href="icon.css">
+</head>
+<script>
+
+
+
+
+</script>
+
+<body>
+    <div id="container">
+        <div id="meta">Loading...</div>
+        <div id="game"></div>
+        <footer>
+            <span>图片来源：<a href="https://redive.estertion.win/">干炸里脊資源站</a></span>
+            <br />
+            <span>数据取自：<a href="https://hanshino.nctu.me/online/KyaruMiniGame">龍的探索者們 小遊戲單字表</a></span>
+        </footer>
+    </div>
+    <script>
+        window.pcr = new Object;
+        window.pcr.MAX_COL = 5;
+
+        $.ajax('data.json')
+            .done(data => {
+                window.pcr.META = data.meta;
+                window.pcr.DATA_ARRAY = data.data;
+                initData();
+            });
+
+        function initData() {
+            const metaDiv = $("#meta");
+            metaDiv.empty();
+            window.pcr.META.forEach(e => {
+                metaDiv.append($(`<div>${e}</div>`));
+            });
+            $('#meta').on('click', 'div', e => {
+                let divText = e.currentTarget.textContent.trim();
+                process([divText]);
+            });
+        }
+
+        function process(words) {
+            const gameTable = $("#game");
+            const dataArray = [];
+            window.pcr.DATA_ARRAY.forEach(e => {
+                words.forEach(word => {
+                    if (e.head === word) {
+                        dataArray.push(e);
+                    }
+                });
+            });
+            draw(dataArray);
+        }
+
+        function draw(configArray) {
+            const gameDiv = $("#game");
+            gameDiv.empty();
+            configArray.forEach(config => {
+                gameDiv.append($(`<div tail="${config.tail}">
+                    <div class="icon" icon-id="${config.iconID}"></div>
+                    </div>`).on('click', (e) => {
+                        let tailText = e.currentTarget.getAttribute("tail");
+                        process([tailText]);
+                    }));
+            });
+        }
+    </script>
+</body>
+
+</html>
