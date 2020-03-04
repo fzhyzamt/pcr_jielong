@@ -274,6 +274,7 @@
                 let divText = e.currentTarget.textContent.trim();
                 process(divText);
             });
+            $("#game").bind('contextmenu', e => false); // 为了支持右键点击, 禁用右键菜单
             changeMode(pcr.mode);
             $("#popWindow").addClass("hide");
         }
@@ -413,8 +414,7 @@
             }
 
             gameDiv.append(htmlArray.join(''))
-                .children().mousedown(e => pcr.MODE_CONFIG[pcr.mode].clickEvent(e))
-                .bind('contextmenu', e => false); // 为了支持右键点击, 禁用右键菜单
+                .children().mousedown(e => pcr.MODE_CONFIG[pcr.mode].clickEvent(e));
         }
 
         function buildShowDiv(config, isFocus = false) {
