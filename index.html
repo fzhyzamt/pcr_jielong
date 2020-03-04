@@ -147,7 +147,7 @@
                     const tailWord = e.currentTarget.getAttribute('tail');
                     switch (e.which) {
                         case 1:
-                            addClickHistory(e.currentTarget.getAttribute('data-name'), e.currentTarget.getAttribute('data-icon-id'));
+                            addClickHistory(e.currentTarget.dataset.name, e.currentTarget.dataset.iconId);
                             process(tailWord);
                             break;
                         case 3:
@@ -162,8 +162,8 @@
                 alwayDrawAll: true,
                 help: '左键点击图片将标记为已选择，右键单击图片将移除已选择标记。',
                 clickEvent: function (e) {
-                    const name = e.currentTarget.getAttribute('data-name');
-                    const iconID = e.currentTarget.getAttribute('data-icon-id');
+                    const name = e.currentTarget.dataset.name;
+                    const iconID = e.currentTarget.dataset.iconId;
                     switch (e.which) {
                         case 1:
                             if (addClickHistory(name, iconID))
@@ -185,8 +185,8 @@
                     switch (e.which) {
                         case 1:
                             pcr.focusTarget = {
-                                name: e.currentTarget.getAttribute('data-name'),
-                                iconID: e.currentTarget.getAttribute('data-icon-id')
+                                name: e.currentTarget.dataset.name,
+                                iconID: e.currentTarget.dataset.iconId
                             };
                             reProcess();
                             break;
