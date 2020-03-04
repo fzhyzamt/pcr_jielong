@@ -253,9 +253,9 @@
         
         $("#disableRightClick").click(e => {
             if (e.currentTarget.checked) {
-                $("html").bind('contextmenu', e => false);
+                $(document).bind('contextmenu', e => false);
             } else {
-                $("html").unbind('contextmenu');
+                $(document).unbind('contextmenu');
             }
         });
 
@@ -283,7 +283,7 @@
                 let divText = e.currentTarget.textContent.trim();
                 process(divText);
             });
-            $("body").bind('contextmenu', e => false); // 为了支持右键点击, 禁用右键菜单
+            $(document).bind('contextmenu', e => false); // 为了支持右键点击, 禁用右键菜单
             changeMode(pcr.mode);
             $("#popWindow").addClass("hide");
         }
