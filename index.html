@@ -15,12 +15,41 @@
             margin: 10px auto;
         }
 
-        #help {
+        .clearfix::after {
+            content: '';
+            display: block;
+            clear: both;
+        }
+
+        #modeSelector .tab {
+            float: left;
+            padding: 5px 20px;
+            background: #EEE;
+            border-top: 1px solid;
+            border-left: 1px solid;
+            border-bottom: 1px solid;
+            cursor: pointer;
+        }
+
+        #modeSelector .tab.active {
+            background: white;
+            border-bottom: none;
+        }
+
+        #modeSelector .tab:last-child {
+            border-right: 1px solid;
+        }
+
+        .help {
+            padding: 5px 10px;
             text-align: left;
+            background-color: #EEE;
         }
 
         #util {
+            padding: 5px 10px;
             text-align: left;
+            background-color: #FFE;
         }
 
         #meta {
@@ -82,10 +111,17 @@
 <body>
     <div id="container">
         <img src="https://i.loli.net/2020/03/03/sIZwimkEDNQ82Yl.png" style="display: none;width: 0;height: 0;">
-        <div id="help">左键点击图片将标记为已选择过并显示其接龙, 右键单击图片将不标记仅继续接龙, 用于非玩家回合时使用</div>
+        <div id="modeSelector">
+            <div class="header clearfix">
+                <div class="tab" id="gameMode">游戏模式</div>
+                <div class="tab" id="markMode">标记模式(待施工)</div>
+                <div class="tab" id="targetMode">目标追踪(待施工）</div>
+            </div>
+            <div class="help"></div>
+        </div>
         <div id="util">
             <input id="clearClickHistory" type="button" value="清除点击记录" />
-            <input id="showName" type="checkbox" /> 显示名称
+            <input id="showName" type="checkbox" /> <label for="showName">显示名称</label>
         </div>
         <div id="meta">Loading...</div>
         <div id="game"></div>
@@ -96,56 +132,103 @@
         </footer>
     </div>
     <script>
-        window.pcr = new Object;
-        window.pcr.clickHistory = new Set(JSON.parse(localStorage.getItem("clickedHistory") || '[]'));
+        const pcr = new Object;
+        window.pcr = pcr; // root
+        pcr.MODE_GAME = 'gameMode';
+        pcr.MODE_MARK = 'markMode';
+        pcr.MODE_TARGET = 'targetMode';
+        pcr.clickHistory = new Set(JSON.parse(localStorage.getItem("clickedHistory") || '[]')); // 已点击集合
+        pcr.mode = pcr.MODE_GAME;
+        pcr.MODE_CONFIG = {
+            'gameMode': {
+                alwayDrawAll: false,
+                help: '左键点击图片将标记为已选择过并显示其接龙, 右键单击图片将不标记仅继续接龙, 用于非玩家回合时使用。'
+            },
+            'markMode': {
+                alwayDrawAll: true,
+                help: '左键点击图片将标记为已选择，右键单击图片将移除已选择标记。'
+            },
+            'targetMode': {
+                alwayDrawAll: true,
+                help: '选择一个图片作为最终目标，游戏模式中将会进行深度10追踪。'
+            }
+        };
 
         $.ajax('data.json')
             .done(data => {
-                window.pcr.META = data.meta;
-                window.pcr.DATA_ARRAY = data.data;
-                window.pcr.SAME_META = [];
-                data.sameMeta.forEach(arr => window.pcr.SAME_META.push(new Set(arr)));
+                pcr.META = data.meta;
+                pcr.DATA_ARRAY = data.data;
+                pcr.SAME_META = [];
+                data.sameMeta.forEach(arr => pcr.SAME_META.push(new Set(arr)));
                 initData();
             });
 
+        $("#modeSelector #gameMode").click(e => {
+            changeMode(pcr.MODE_GAME);
+        });
+        $("#modeSelector #markMode").click(e => {
+            changeMode(pcr.MODE_MARK);
+        });
+        $("#modeSelector #targetMode").click(e => {
+            changeMode(pcr.MODE_TARGET);
+        });
+
         $("#clearClickHistory").click(e => {
             localStorage.removeItem('clickedHistory');
-            window.pcr.clickHistory.clear();
+            pcr.clickHistory.clear();
             reProcess();
         });
 
         $("#showName").click(e => {
-            window.pcr.showName = e.currentTarget.checked;
+            pcr.showName = e.currentTarget.checked;
             reProcess();
         });
+
+        function changeMode(mode) {
+            const conf = pcr.MODE_CONFIG[mode];
+
+            $(`#modeSelector #${mode}`).addClass('active').siblings().removeClass('active');
+            $('#modeSelector .help').text(conf.help);
+            // TODO
+            if (conf.alwayDrawAll) {
+                process(null);
+            } else {
+                process(pcr.preWord);
+            }
+        }
 
         function initData() {
             const metaDiv = $("#meta");
             metaDiv.empty();
-            window.pcr.META.forEach(e => {
+            pcr.META.forEach(e => {
                 metaDiv.append($(`<div>${e}</div>`));
             });
             $('#meta').on('click', 'div', e => {
                 let divText = e.currentTarget.textContent.trim();
                 process(divText);
             });
-            process(null);
+            changeMode(pcr.mode);
         }
 
         function reProcess() {
-            draw(window.pcr.preDataArray);
+            draw(pcr.preDataArray);
         }
 
+        /**
+        * 传入null将渲染所有选项，null不会覆盖上次的选项。
+        **/
         function process(word) {
-            const gameTable = $("#game");
+            if (word != null) {
+                pcr.preWord = word;
+            }
             let dataArray = [];
-            window.pcr.DATA_ARRAY.forEach(e => {
+            pcr.DATA_ARRAY.forEach(e => {
                 if (isMatchWord(e, word)) {
                     dataArray.push(e);
                 }
             });
             dataArray = sort(dataArray);
-            window.pcr.preDataArray = dataArray;
+            pcr.preDataArray = dataArray;
             draw(dataArray);
         }
 
@@ -155,20 +238,21 @@
         }
 
         function isMatchWord(e, selectWord) {
-            if (selectWord === null || e.head === selectWord) {
+            if (selectWord == null || e.head === selectWord) {
                 return true;
             }
-            return window.pcr.SAME_META.some(set => set.has(selectWord) && set.has(e.head));
+            return pcr.SAME_META.some(set => set.has(selectWord) && set.has(e.head));
         }
 
         function draw(configArray) {
             const gameDiv = $('#game');
             gameDiv.empty();
             configArray.forEach(config => {
+                // FIXME so slow
                 gameDiv.append($(`<div tail="${config.tail}" data-name="${config.name}" data-icon-id="${config.iconID}">
                     <div class="icon" icon-id="${config.iconID}">
                         ${isClicked(config.name, config.iconID) ? '<img src="dui.png" class="clicked"/>' : ""}
-                        ${window.pcr.showName ? `<span>${config.name}</span>` : ''}
+                        ${pcr.showName ? `<span>${config.name}</span>` : ''}
                     </div>
                     </div>`).mousedown((e) => {
                     switch (e.which) {
@@ -192,12 +276,12 @@
             if (isClicked(name, iconID)) {
                 return;
             }
-            window.pcr.clickHistory.add(iconID + name);
-            localStorage.setItem("clickedHistory", JSON.stringify(Array.from(window.pcr.clickHistory)));
+            pcr.clickHistory.add(iconID + name);
+            localStorage.setItem("clickedHistory", JSON.stringify(Array.from(pcr.clickHistory)));
         }
 
         function isClicked(name, iconID) {
-            return window.pcr.clickHistory.has(iconID + name);
+            return pcr.clickHistory.has(iconID + name);
         }
     </script>
 </body>
