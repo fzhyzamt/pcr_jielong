@@ -15,6 +15,16 @@
             margin: 10px auto;
         }
 
+        #popWindow {
+            position: fixed;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            top: 0;
+            z-index: 999;
+            background-color: rgba(0, 0, 0, .5);
+        }
+
         .clearfix::after {
             content: '';
             display: block;
@@ -103,6 +113,7 @@
 </head>
 
 <body>
+    <div id="popWindow"></div>
     <div id="container">
         <img src="https://i.loli.net/2020/03/03/sIZwimkEDNQ82Yl.png" style="display: none;width: 0;height: 0;">
         <div id="modeSelector">
@@ -246,6 +257,7 @@
                 process(divText);
             });
             changeMode(pcr.mode);
+            $("#popWindow").remove();
         }
 
         function reProcess() {
