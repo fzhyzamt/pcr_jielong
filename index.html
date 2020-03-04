@@ -25,6 +25,9 @@
             background-color: rgba(0, 0, 0, .5);
         }
 
+        .clearfix {
+            clear: both;
+        }
         .clearfix::after {
             content: '';
             display: block;
@@ -86,7 +89,7 @@
             width: 100%;
         }
 
-        #game>div {
+        #game>.grid {
             float: left;
             height: 80px;
         }
@@ -261,30 +264,41 @@
         }
 
         function reProcess() {
-            draw(pcr.preDataArray);
+            draw(pcr.preData);
         }
 
         /**
         * 传入null将渲染所有选项，null不会覆盖上次的选项。
         **/
         function process(word) {
-            if (word != null) {
+            let dataArray;
+            if (word == null) {
+                dataArray = [...pcr.DATA_ARRAY];
+            } else {
                 pcr.preWord = word;
+                dataArray = [];
+                pcr.DATA_ARRAY.forEach(e => {
+                    if (isMatchWord(e, word)) {
+                        dataArray.push(e);
+                    }
+                });
             }
-            let dataArray = [];
-            pcr.DATA_ARRAY.forEach(e => {
-                if (isMatchWord(e, word)) {
-                    dataArray.push(e);
-                }
-            });
-            dataArray = sort(dataArray);
-            pcr.preDataArray = dataArray;
-            draw(dataArray);
+            if (pcr.focusTarget) {
+                pcr.preData = splitDataArray(dataArray);
+            } else {
+                pcr.preData = {
+                    normal: dataArray
+                };
+            }
+            draw(pcr.preData);
         }
 
-        function sort(dataArray) {
-            // TODO 按照分数以及是否点击过排序
-            return dataArray;
+        function splitDataArray(dataArray) {
+
+            return {
+                focus: dataArray,
+                normal: dataArray
+            };
         }
 
         function isMatchWord(e, selectWord) {
@@ -294,23 +308,41 @@
             return pcr.SAME_META.some(set => set.has(selectWord) && set.has(e.head));
         }
 
-        function draw(configArray) {
+        function draw(configData) {
             const gameDiv = $('#game');
             gameDiv.empty();
-            let html = '';
-            configArray.forEach(config => {
-                html += `<div tail="${config.tail}" data-name="${config.name}" data-icon-id="${config.iconID}">
+            let htmlArray = [];
+
+            // 通向标记
+            if (configData.focus && configData.focus.length > 0) {
+                htmlArray.push(`<div>通向目标"${pcr.focusTarget.name}"</div>`);
+
+                configData.focus.forEach(config => {
+                    htmlArray.push(buildShowDiv(config, true));
+                });
+
+                if (htmlArray.length > 0) {
+                    htmlArray.push(`<div class="clearfix">不通向目标</div>`);
+                }
+            }
+            configData.normal && configData.normal.forEach(config => {
+                htmlArray.push(buildShowDiv(config));
+            });
+
+            gameDiv.append(htmlArray.join(''))
+                .children().mousedown(e => pcr.MODE_CONFIG[pcr.mode].clickEvent(e))
+                .bind('contextmenu', e => false); // 为了支持右键点击, 禁用右键菜单
+        }
+
+        function buildShowDiv(config, isFocus = false) {
+            return `<div class="grid" tail="${config.tail}" data-name="${config.name}" data-icon-id="${config.iconID}">
                     <div class="icon" icon-id="${config.iconID}">
                         ${isClicked(config.name, config.iconID) ? '<img src="dui.png" class="clicked"/>' : ""}
                         ${pcr.showName ? `<span>${config.name}</span>` : ''}
-                        ${pcr.focusTarget && pcr.focusTarget.name === config.name && pcr.focusTarget.iconID === config.iconID
-                        ? `` : ''}
+                        ${pcr.focusTarget && pcr.focusTarget.name === config.name && pcr.focusTarget.iconID == config.iconID
+                    ? targetIcon() : ''}
                     </div>
-                    </div>`;
-            });
-            gameDiv.append(html)
-                .children().mousedown(e => pcr.MODE_CONFIG[pcr.mode].clickEvent(e))
-                .bind('contextmenu', e => false); // 为了支持右键点击, 禁用右键菜单
+                    </div>`
         }
 
         // 如果删除成功返回true，不存在返回false
@@ -333,6 +365,10 @@
 
         function isClicked(name, iconID) {
             return pcr.clickHistory.has(iconID + name);
+        }
+
+        function targetIcon() {
+            return '<svg t="1583303562466" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2566" width="32" height="32" style="position:absolute;right:20px;bottom:20px;">\<path d="M862.08 480A350.08 350.08 0 0 0 544 161.92V64h-64v97.92A350.08 350.08 0 0 0 161.92 480H64v64h97.92a350.08 350.08 0 0 0 318.08 318.08V960h64v-97.92a350.08 350.08 0 0 0 318.08-318.08H960v-64h-97.92zM480 798.08A287.232 287.232 0 0 1 225.92 544H480v254.08z m0-318.08H225.92A287.232 287.232 0 0 1 480 225.92V480z m64-254.08c133.76 14.72 239.36 120.32 254.08 254.08H544V225.92z m0 572.16V544h254.08a287.232 287.232 0 0 1-254.08 254.08z" p-id="2567"></path></svg>';
         }
     </script>
 </body>
