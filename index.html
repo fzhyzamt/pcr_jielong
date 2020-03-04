@@ -22,7 +22,7 @@
             left: 0;
             top: 0;
             z-index: 999;
-            background-color: rgba(0, 0, 0, .5);
+            background-color: rgba(255, 255, 255, .2);
         }
 
         .clearfix {
@@ -135,6 +135,7 @@
         <div id="util">
             <input id="clearClickHistory" type="button" value="清除点击记录" />
             <input id="showName" type="checkbox" /> <label for="showName">显示名称</label>
+            <input id="disableRightClick" type="checkbox" checked="checked"/> <label for="disableRightClick">禁用右键菜单</label>
         </div>
         <div id="meta" class="clearfix">Loading...</div>
         <div id="game" class="clearfix"></div>
@@ -249,6 +250,14 @@
             pcr.showName = e.currentTarget.checked;
             reProcess();
         });
+        
+        $("#disableRightClick").click(e => {
+            if (e.currentTarget.checked) {
+                $("body").bind('contextmenu', e => false);
+            } else {
+                $("body").unbind('contextmenu');
+            }
+        });
 
         function changeMode(mode) {
             const conf = pcr.MODE_CONFIG[mode];
@@ -274,7 +283,7 @@
                 let divText = e.currentTarget.textContent.trim();
                 process(divText);
             });
-            $("#game").bind('contextmenu', e => false); // 为了支持右键点击, 禁用右键菜单
+            $("body").bind('contextmenu', e => false); // 为了支持右键点击, 禁用右键菜单
             changeMode(pcr.mode);
             $("#popWindow").addClass("hide");
         }
