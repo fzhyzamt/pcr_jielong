@@ -28,6 +28,7 @@
         .clearfix {
             clear: both;
         }
+
         .clearfix::after {
             content: '';
             display: block;
@@ -100,6 +101,10 @@
             margin: 1px;
         }
 
+        .hide {
+            display: none;
+        }
+
         .icon {
             position: relative;
             background-image: url(https://i.loli.net/2020/03/03/sIZwimkEDNQ82Yl.png);
@@ -142,20 +147,28 @@
     <script>
         const pcr = new Object;
         window.pcr = pcr; // root
+        pcr.MAX_FIND_DEEP = 4;
         pcr.MODE_GAME = 'gameMode';
         pcr.MODE_MARK = 'markMode';
         pcr.MODE_TARGET = 'targetMode';
         pcr.clickHistory = new Set(JSON.parse(localStorage.getItem("clickedHistory") || '[]')); // 已点击集合
         pcr.mode = pcr.MODE_GAME;
+
         pcr.MODE_CONFIG = {
             'gameMode': {
                 alwayDrawAll: false,
                 help: '左键点击图片将标记为已选择过并显示其接龙, 右键单击图片将不标记仅继续接龙, 用于非玩家回合时使用。',
                 clickEvent: function (e) {
-                    const tailWord = e.currentTarget.getAttribute('tail');
+                    const tailWord = e.currentTarget.dataset.tail;
+                    const name = e.currentTarget.dataset.name;
+                    const iconID = e.currentTarget.dataset.iconId;
                     switch (e.which) {
                         case 1:
-                            addClickHistory(e.currentTarget.dataset.name, e.currentTarget.dataset.iconId);
+                            addClickHistory(name, iconID);
+                            if (isFocusTarget(name, iconID)) {
+                                // 完成目标，移除
+                                pcr.focusTarget = undefined;
+                            }
                             process(tailWord);
                             break;
                         case 3:
@@ -188,13 +201,15 @@
             },
             'targetMode': {
                 alwayDrawAll: true,
-                help: '选择一个图片作为最终目标，游戏模式中将会进行深度10追踪。',
+                help: '选择一个图片作为最终目标，游戏模式中将会进行追踪。深度超过3就卡爆了，谁能jojo我。目前搜索深度为4。超过4将认为不可达。',
                 clickEvent: function (e) {
                     switch (e.which) {
                         case 1:
                             pcr.focusTarget = {
                                 name: e.currentTarget.dataset.name,
-                                iconID: e.currentTarget.dataset.iconId
+                                iconID: e.currentTarget.dataset.iconId,
+                                tail: e.currentTarget.dataset.tail,
+                                head: e.currentTarget.dataset.head
                             };
                             reProcess();
                             break;
@@ -241,7 +256,7 @@
 
             $(`#modeSelector #${mode}`).addClass('active').siblings().removeClass('active');
             $('#modeSelector .help').text(conf.help);
-            // TODO
+
             if (conf.alwayDrawAll) {
                 process(null);
             } else {
@@ -260,7 +275,7 @@
                 process(divText);
             });
             changeMode(pcr.mode);
-            $("#popWindow").remove();
+            $("#popWindow").addClass("hide");
         }
 
         function reProcess() {
@@ -271,34 +286,93 @@
         * 传入null将渲染所有选项，null不会覆盖上次的选项。
         **/
         function process(word) {
-            let dataArray;
-            if (word == null) {
-                dataArray = [...pcr.DATA_ARRAY];
-            } else {
-                pcr.preWord = word;
-                dataArray = [];
-                pcr.DATA_ARRAY.forEach(e => {
-                    if (isMatchWord(e, word)) {
-                        dataArray.push(e);
+            $("#popWindow").removeClass("hide");
+
+            // 让出执行权渲染遮罩
+            setTimeout(() => {
+                let dataArray;
+                if (word == null) {
+                    pcr.preData = {
+                        all: [...pcr.DATA_ARRAY]
+                    };
+                } else {
+                    pcr.preWord = word;
+                    dataArray = [];
+                    pcr.DATA_ARRAY.forEach(e => {
+                        if (isMatchWord(e, word)) {
+                            // 复制对象，确保后续修改不影响源数据
+                            dataArray.push(Object.assign({}, e));
+                        }
+                    });
+                    if (pcr.focusTarget) {
+                        pcr.preData = splitDataArray(dataArray);
+                    } else {
+                        pcr.preData = {
+                            all: dataArray
+                        };
                     }
-                });
-            }
-            if (pcr.focusTarget) {
-                pcr.preData = splitDataArray(dataArray);
-            } else {
-                pcr.preData = {
-                    normal: dataArray
-                };
-            }
-            draw(pcr.preData);
+                }
+
+                draw(pcr.preData);
+                $("#popWindow").addClass("hide");
+            }, 0);
         }
 
         function splitDataArray(dataArray) {
+            const focus = [], normal = [];
+
+            dataArray.forEach(data => {
+                if (isFocusTarget(data.name, data.iconID)) {
+                    // 把目标插入到最前边
+                    data.deep = 0;
+                    focus.splice(0, 0, data);
+                    return;
+                }
+                let deep = isRoad(data, 1);
+                if (deep > 0) {
+                    data.deep = deep;
+                    focus.push(data);
+                } else {
+                    normal.push(data);
+                }
+            });
+
+            if (focus.length > 0) {
+                focus.sort((l, r) => {
+                    return l.deep - r.deep;
+                });
+            }
 
             return {
-                focus: dataArray,
-                normal: dataArray
+                focus: focus,
+                normal: normal
             };
+        }
+
+        // 返回到达目标节点所需的次数，返回-1表示不可达
+        // 完全遍历笛卡尔积，时间复杂度爆表，小霸王卡爆，没jo了等4吧
+        // 或者把源数据换成MAP抢救一下
+        function isRoad(data, deep) {
+            if (data.tail == pcr.focusTarget.head) {
+                return deep;
+            }
+            if (deep >= pcr.MAX_FIND_DEEP) {
+                return -1;
+            }
+            deep++;
+            let minDeep = -1;
+            for (let i in pcr.DATA_ARRAY) {
+                let nextData = pcr.DATA_ARRAY[i];
+                if (!isMatchWord(nextData, data.tail)) {
+                    continue;
+                }
+                let nextDeep = isRoad(nextData, deep);
+                if (nextDeep > 0) {
+                    minDeep = minDeep == -1 ? nextDeep : Math.min(minDeep, nextDeep);
+                }
+            }
+
+            return minDeep;
         }
 
         function isMatchWord(e, selectWord) {
@@ -308,26 +382,35 @@
             return pcr.SAME_META.some(set => set.has(selectWord) && set.has(e.head));
         }
 
+        function isFocusTarget(name, iconID) {
+            return pcr.focusTarget && pcr.focusTarget.name === name && pcr.focusTarget.iconID == iconID
+        }
+
         function draw(configData) {
             const gameDiv = $('#game');
             gameDiv.empty();
             let htmlArray = [];
 
-            // 通向标记
-            if (configData.focus && configData.focus.length > 0) {
+            // 通向标记，当显示全部时不显示
+            if (pcr.focusTarget && !configData.all) {
                 htmlArray.push(`<div>通向目标"${pcr.focusTarget.name}"</div>`);
 
-                configData.focus.forEach(config => {
+                configData.focus && configData.focus.forEach(config => {
                     htmlArray.push(buildShowDiv(config, true));
                 });
 
                 if (htmlArray.length > 0) {
                     htmlArray.push(`<div class="clearfix">不通向目标</div>`);
                 }
+                configData.normal && configData.normal.forEach(config => {
+                    htmlArray.push(buildShowDiv(config));
+                });
+            } else {
+                // 渲染所有
+                configData.all && configData.all.forEach(config => {
+                    htmlArray.push(buildShowDiv(config));
+                });
             }
-            configData.normal && configData.normal.forEach(config => {
-                htmlArray.push(buildShowDiv(config));
-            });
 
             gameDiv.append(htmlArray.join(''))
                 .children().mousedown(e => pcr.MODE_CONFIG[pcr.mode].clickEvent(e))
@@ -335,12 +418,12 @@
         }
 
         function buildShowDiv(config, isFocus = false) {
-            return `<div class="grid" tail="${config.tail}" data-name="${config.name}" data-icon-id="${config.iconID}">
+            return `<div class="grid" data-head="${config.head}" data-tail="${config.tail}" data-name="${config.name}" data-icon-id="${config.iconID}" >
                     <div class="icon" icon-id="${config.iconID}">
                         ${isClicked(config.name, config.iconID) ? '<img src="dui.png" class="clicked"/>' : ""}
                         ${pcr.showName ? `<span>${config.name}</span>` : ''}
-                        ${pcr.focusTarget && pcr.focusTarget.name === config.name && pcr.focusTarget.iconID == config.iconID
-                    ? targetIcon() : ''}
+                        ${isFocusTarget(config.name, config.iconID) ? targetIcon() : ''}
+                        ${config.deep ? `<span>需${config.deep}步</span>` : ''}
                     </div>
                     </div>`
         }
