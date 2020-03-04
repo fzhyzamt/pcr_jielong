@@ -116,8 +116,18 @@
             right: 10px;
             bottom: 10px;
         }
+
+        .v-split {
+            padding: 12px 6px 0px 6px;
+
+            margin-left: 6px;
+
+            border-left: 1px solid #000;
+
+            font-size: 0;
+        }
     </style>
-    <link rel="stylesheet" href="icon.css">
+    <link rel="stylesheet" href="https://fzhyzamt.github.io/pcr_jielong/icon.css">
 </head>
 
 <body>
@@ -128,14 +138,25 @@
             <div class="clearfix">
                 <div class="tab" id="gameMode">游戏模式</div>
                 <div class="tab" id="markMode">标记模式</div>
-                <div class="tab" id="targetMode">目标追踪(待施工）</div>
+                <div class="tab" id="targetMode"><s>目标追踪</s></div>
             </div>
             <div class="help"></div>
         </div>
         <div id="util">
             <input id="clearClickHistory" type="button" value="清除点击记录" />
             <input id="showName" type="checkbox" /> <label for="showName">显示名称</label>
-            <input id="disableRightClick" type="checkbox" checked="checked"/> <label for="disableRightClick">禁用右键菜单</label>
+            <span class="v-split"></span>
+            <input id="disableRightClick" type="checkbox" checked="checked" /> <label
+                for="disableRightClick">禁用右键菜单</label>
+            <span class="v-split"></span>
+            <label>
+                显示接下来第
+                <select id="showNextUnClick">
+                    <option>0</option>
+                    <option>2</option>
+                </select>
+                次时的未点击物
+            </label>
         </div>
         <div id="meta" class="clearfix">Loading...</div>
         <div id="game" class="clearfix"></div>
@@ -189,11 +210,11 @@
                     switch (e.which) {
                         case 1:
                             if (addClickHistory(name, iconID))
-                                reProcess();
+                                reDraw();
                             break;
                         case 3:
                             if (removeClickHistory(name, iconID))
-                                reProcess();
+                                reDraw();
                             break;
                         default:
                             break;
@@ -202,7 +223,7 @@
             },
             'targetMode': {
                 alwayDrawAll: true,
-                help: '选择一个图片作为最终目标，游戏模式中将会进行追踪。深度超过3就卡爆了，谁能jojo我。目前搜索深度为4。超过4将认为不可达。',
+                help: '选择一个图片作为最终目标，游戏模式中将会进行追踪。深度超过3就卡爆了，谁能jojo我。目前搜索深度为4。超过4将认为不可达。自己用了一下感觉8太行, 忘了吧.',
                 clickEvent: function (e) {
                     switch (e.which) {
                         case 1:
@@ -212,7 +233,7 @@
                                 tail: e.currentTarget.dataset.tail,
                                 head: e.currentTarget.dataset.head
                             };
-                            reProcess();
+                            reDraw();
                             break;
                         default:
                             break;
@@ -221,7 +242,7 @@
             }
         };
 
-        $.ajax('data.json')
+        $.ajax('https://fzhyzamt.github.io/pcr_jielong/data.json')
             .done(data => {
                 pcr.META = data.meta;
                 pcr.DATA_ARRAY = data.data;
@@ -243,20 +264,26 @@
         $("#clearClickHistory").click(e => {
             localStorage.removeItem('clickedHistory');
             pcr.clickHistory.clear();
-            reProcess();
+            reDraw();
         });
 
         $("#showName").click(e => {
             pcr.showName = e.currentTarget.checked;
-            reProcess();
+            reDraw();
         });
-        
+
         $("#disableRightClick").click(e => {
             if (e.currentTarget.checked) {
                 $(document).bind('contextmenu', e => false);
             } else {
                 $(document).unbind('contextmenu');
             }
+        });
+
+        $("#showNextUnClick").change(e => {
+            const num = parseInt(e.currentTarget.value);
+            pcr.showNextUnClick = num;
+            reProcess();
         });
 
         function changeMode(mode) {
@@ -283,12 +310,16 @@
                 let divText = e.currentTarget.textContent.trim();
                 process(divText);
             });
+            pcr.showNextUnClick = parseInt($("#showNextUnClick").val());
             $(document).bind('contextmenu', e => false); // 为了支持右键点击, 禁用右键菜单
             changeMode(pcr.mode);
             $("#popWindow").addClass("hide");
         }
 
         function reProcess() {
+            process(pcr.preWord);
+        }
+        function reDraw() {
             draw(pcr.preData);
         }
 
@@ -322,10 +353,34 @@
                         };
                     }
                 }
+                calcNextUnClick(pcr.preData.all);
+                calcNextUnClick(pcr.preData.focus);
+                calcNextUnClick(pcr.preData.normal);
 
                 draw(pcr.preData);
                 $("#popWindow").addClass("hide");
             }, 0);
+        }
+
+        function calcNextUnClick(dataArray) {
+            if (dataArray == null) {
+                return;
+            }
+            if (pcr.showNextUnClick == 0) {
+                dataArray.forEach(data => {
+                    data.nextUnClick = 0;
+                })
+                return;
+            };
+            dataArray.forEach(data => {
+                let unClickSet = new Set();
+                eachMatchedWord(data, pcr.showNextUnClick, nextData => {
+                    if (isUnClicked(nextData.name, nextData.iconID)) {
+                        unClickSet.add(nextData.iconID + nextData.name);
+                    }
+                });
+                data.nextUnClick = unClickSet.size;
+            });
         }
 
         function splitDataArray(dataArray) {
@@ -371,17 +426,12 @@
             }
             deep++;
             let minDeep = -1;
-            for (let i in pcr.DATA_ARRAY) {
-                let nextData = pcr.DATA_ARRAY[i];
-                if (!isMatchWord(nextData, data.tail)) {
-                    continue;
-                }
+            eachMatchedWord(data, 1, nextData => {
                 let nextDeep = isRoad(nextData, deep);
                 if (nextDeep > 0) {
                     minDeep = minDeep == -1 ? nextDeep : Math.min(minDeep, nextDeep);
                 }
-            }
-
+            })
             return minDeep;
         }
 
@@ -429,12 +479,28 @@
         function buildShowDiv(config, isFocus = false) {
             return `<div class="grid" data-head="${config.head}" data-tail="${config.tail}" data-name="${config.name}" data-icon-id="${config.iconID}" >
                     <div class="icon" icon-id="${config.iconID}">
-                        ${isClicked(config.name, config.iconID) ? '<img src="dui.png" class="clicked"/>' : ""}
+                        ${isClicked(config.name, config.iconID) ? '<img src="https://fzhyzamt.github.io/pcr_jielong/dui.png" class="clicked"/>' : ""}
                         ${pcr.showName ? `<span>${config.name}</span>` : ''}
                         ${isFocusTarget(config.name, config.iconID) ? targetIcon() : ''}
                         ${config.deep ? `<span>需${config.deep}步</span>` : ''}
+                        ${config.nextUnClick ? `<span>未点${config.nextUnClick}个</span>` : ''}
                     </div>
                     </div>`
+        }
+
+        // TODO 将结果缓存
+        function eachMatchedWord(data, loop, func) {
+            for (let i in pcr.DATA_ARRAY) {
+                let nextData = pcr.DATA_ARRAY[i];
+                if (!isMatchWord(nextData, data.tail)) {
+                    continue;
+                }
+                if (loop > 1) {
+                    eachMatchedWord(nextData, loop - 1, func);
+                } else {
+                    func(nextData);
+                }
+            }
         }
 
         // 如果删除成功返回true，不存在返回false
@@ -453,6 +519,10 @@
             pcr.clickHistory.add(iconID + name);
             localStorage.setItem("clickedHistory", JSON.stringify(Array.from(pcr.clickHistory)));
             return true;
+        }
+
+        function isUnClicked(name, iconID) {
+            return !isClicked(name, iconID);
         }
 
         function isClicked(name, iconID) {
