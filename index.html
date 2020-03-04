@@ -253,9 +253,9 @@
         
         $("#disableRightClick").click(e => {
             if (e.currentTarget.checked) {
-                $("body").bind('contextmenu', e => false);
+                $("html").bind('contextmenu', e => false);
             } else {
-                $("body").unbind('contextmenu');
+                $("html").unbind('contextmenu');
             }
         });
 
