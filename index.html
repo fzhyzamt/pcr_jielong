@@ -114,7 +114,7 @@
         <div id="modeSelector">
             <div class="header clearfix">
                 <div class="tab" id="gameMode">游戏模式</div>
-                <div class="tab" id="markMode">标记模式(待施工)</div>
+                <div class="tab" id="markMode">标记模式</div>
                 <div class="tab" id="targetMode">目标追踪(待施工）</div>
             </div>
             <div class="help"></div>
@@ -142,15 +142,58 @@
         pcr.MODE_CONFIG = {
             'gameMode': {
                 alwayDrawAll: false,
-                help: '左键点击图片将标记为已选择过并显示其接龙, 右键单击图片将不标记仅继续接龙, 用于非玩家回合时使用。'
+                help: '左键点击图片将标记为已选择过并显示其接龙, 右键单击图片将不标记仅继续接龙, 用于非玩家回合时使用。',
+                clickEvent: function (e) {
+                    const tailWord = e.currentTarget.getAttribute('tail');
+                    switch (e.which) {
+                        case 1:
+                            addClickHistory(e.currentTarget.getAttribute('data-name'), e.currentTarget.getAttribute('data-icon-id'));
+                            process(tailWord);
+                            break;
+                        case 3:
+                            process(tailWord);
+                            break;
+                        default:
+                            break;
+                    }
+                }
             },
             'markMode': {
                 alwayDrawAll: true,
-                help: '左键点击图片将标记为已选择，右键单击图片将移除已选择标记。'
+                help: '左键点击图片将标记为已选择，右键单击图片将移除已选择标记。',
+                clickEvent: function (e) {
+                    const name = e.currentTarget.getAttribute('data-name');
+                    const iconID = e.currentTarget.getAttribute('data-icon-id');
+                    switch (e.which) {
+                        case 1:
+                            if (addClickHistory(name, iconID))
+                                reProcess();
+                            break;
+                        case 3:
+                            if (removeClickHistory(name, iconID))
+                                reProcess();
+                            break;
+                        default:
+                            break;
+                    }
+                }
             },
             'targetMode': {
                 alwayDrawAll: true,
-                help: '选择一个图片作为最终目标，游戏模式中将会进行深度10追踪。'
+                help: '选择一个图片作为最终目标，游戏模式中将会进行深度10追踪。',
+                clickEvent: function (e) {
+                    switch (e.which) {
+                        case 1:
+                            pcr.focusTarget = {
+                                name: e.currentTarget.getAttribute('data-name'),
+                                iconID: e.currentTarget.getAttribute('data-icon-id')
+                            };
+                            reProcess();
+                            break;
+                        default:
+                            break;
+                    }
+                }
             }
         };
 
@@ -186,6 +229,7 @@
 
         function changeMode(mode) {
             const conf = pcr.MODE_CONFIG[mode];
+            pcr.mode = mode;
 
             $(`#modeSelector #${mode}`).addClass('active').siblings().removeClass('active');
             $('#modeSelector .help').text(conf.help);
@@ -247,37 +291,38 @@
         function draw(configArray) {
             const gameDiv = $('#game');
             gameDiv.empty();
+            let html = '';
             configArray.forEach(config => {
-                // FIXME so slow
-                gameDiv.append($(`<div tail="${config.tail}" data-name="${config.name}" data-icon-id="${config.iconID}">
+                html += `<div tail="${config.tail}" data-name="${config.name}" data-icon-id="${config.iconID}">
                     <div class="icon" icon-id="${config.iconID}">
                         ${isClicked(config.name, config.iconID) ? '<img src="dui.png" class="clicked"/>' : ""}
                         ${pcr.showName ? `<span>${config.name}</span>` : ''}
+                        ${pcr.focusTarget && pcr.focusTarget.name === config.name && pcr.focusTarget.iconID === config.iconID
+                        ? `` : ''}
                     </div>
-                    </div>`).mousedown((e) => {
-                    switch (e.which) {
-                        case 1:
-                            addClickHistory(e.currentTarget.getAttribute('data-name'), e.currentTarget.getAttribute('data-icon-id'));
-                            process(e.currentTarget.getAttribute('tail'));
-                            break;
-                        case 3:
-                            process(e.currentTarget.getAttribute('tail'));
-                            break;
-                        case 2:
-                            break;
-                        default:
-                            break;
-                    }
-                }).bind('contextmenu', e => false)); // 为了支持右键点击, 禁用右键菜单
+                    </div>`;
             });
+            gameDiv.append(html)
+                .children().mousedown(e => pcr.MODE_CONFIG[pcr.mode].clickEvent(e))
+                .bind('contextmenu', e => false); // 为了支持右键点击, 禁用右键菜单
         }
 
+        // 如果删除成功返回true，不存在返回false
+        function removeClickHistory(name, iconID) {
+            if (pcr.clickHistory.delete(iconID + name)) {
+                localStorage.setItem("clickedHistory", JSON.stringify(Array.from(pcr.clickHistory)));
+                return true;
+            }
+            return false;
+        }
+        // 添加成功返回true，已存在返回false
         function addClickHistory(name, iconID) {
             if (isClicked(name, iconID)) {
-                return;
+                return false;
             }
             pcr.clickHistory.add(iconID + name);
             localStorage.setItem("clickedHistory", JSON.stringify(Array.from(pcr.clickHistory)));
+            return true;
         }
 
         function isClicked(name, iconID) {
