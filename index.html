@@ -56,7 +56,6 @@
             width: 100%;
             margin: 0px auto;
             line-height: 30px;
-            clear: both;
         }
 
         #meta>div {
@@ -75,7 +74,6 @@
         #game {
             min-height: 100px;
             width: 100%;
-            clear: both;
         }
 
         #game>div {
@@ -87,10 +85,6 @@
             height: 78px;
             width: 78px;
             margin: 1px;
-        }
-
-        footer {
-            clear: both;
         }
 
         .icon {
@@ -112,7 +106,7 @@
     <div id="container">
         <img src="https://i.loli.net/2020/03/03/sIZwimkEDNQ82Yl.png" style="display: none;width: 0;height: 0;">
         <div id="modeSelector">
-            <div class="header clearfix">
+            <div class="clearfix">
                 <div class="tab" id="gameMode">游戏模式</div>
                 <div class="tab" id="markMode">标记模式</div>
                 <div class="tab" id="targetMode">目标追踪(待施工）</div>
@@ -123,8 +117,8 @@
             <input id="clearClickHistory" type="button" value="清除点击记录" />
             <input id="showName" type="checkbox" /> <label for="showName">显示名称</label>
         </div>
-        <div id="meta">Loading...</div>
-        <div id="game"></div>
+        <div id="meta" class="clearfix">Loading...</div>
+        <div id="game" class="clearfix"></div>
         <footer>
             <span>图片来源：<a target="_blank" href="https://redive.estertion.win/">干炸里脊資源站</a></span>
             <br />
