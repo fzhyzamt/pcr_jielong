@@ -363,7 +363,7 @@
         // 完全遍历笛卡尔积，时间复杂度爆表，小霸王卡爆，没jo了等4吧
         // 或者把源数据换成MAP抢救一下
         function isRoad(data, deep) {
-            if (data.tail == pcr.focusTarget.head) {
+            if (isMatchWord(pcr.focusTarget, data.tail)) {
                 return deep;
             }
             if (deep >= pcr.MAX_FIND_DEEP) {
