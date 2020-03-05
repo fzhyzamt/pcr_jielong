@@ -124,6 +124,10 @@
             display: none;
         }
 
+        .gray-scale {
+            filter: grayscale(90%);
+        }
+
         .icon {
             position: relative;
             background-image: url(https://i.loli.net/2020/03/03/sIZwimkEDNQ82Yl.png);
@@ -164,6 +168,8 @@
             <span class="v-split"></span>
             <label><input id="disableRightClick" type="checkbox" checked="checked" />禁用右键菜单</label>
             <span class="v-split"></span>
+            <label><input id="grayUnClick" type="checkbox"/>灰度显示未点击</label>
+            <span class="v-spiit"></span>
             <label>
                 显示接下来第
                 <select id="showNextUnClick">
@@ -323,6 +329,11 @@
             reProcess();
         });
 
+        $("#grayUnClick").change(e => {
+            pcr.grayShowUnClick = e.currentTarget.checked;
+            reDraw();
+        })
+
         function changeMode(mode) {
             const conf = pcr.MODE_CONFIG[mode];
             pcr.mode = mode;
@@ -417,6 +428,7 @@
                 });
                 data.nextUnClick = unClickSet.size;
             });
+            dataArray.sort((l, r) => r.nextUnClick - l.nextUnClick);
         }
 
         function splitDataArray(dataArray) {
@@ -497,7 +509,7 @@
             if (pcr.focusTarget && !configData.all) {
                 htmlArray.push(`<div class="hr">通向目标"${pcr.focusTarget.name}"</div>`);
                 configData.focus && configData.focus.forEach(config => {
-                    htmlArray.push(buildShowDiv(config, true));
+                    htmlArray.push(buildShowDiv(config));
                     eachHandle(config);
                 });
 
@@ -522,9 +534,9 @@
                 .children().mousedown(e => pcr.MODE_CONFIG[pcr.mode].clickEvent(e));
         }
 
-        function buildShowDiv(config, isFocus = false) {
+        function buildShowDiv(config) {
             return `<div class="grid" data-head="${config.head}" data-tail="${config.tail}" data-name="${config.name}" data-icon-id="${config.iconID}" >
-                    <div class="icon" icon-id="${config.iconID}">
+                    <div class="icon ${pcr.grayShowUnClick && isUnClicked(config.name, config.iconID) ? 'gray-scale': ''}" icon-id="${config.iconID}">
                         ${isClicked(config.name, config.iconID) ? '<img src="https://fzhyzamt.github.io/pcr_jielong/dui.png" class="clicked"/>' : ""}
                         ${pcr.showName ? `<span>${config.name}</span>` : ''}
                         ${isFocusTarget(config.name, config.iconID) ? targetIcon() : ''}
