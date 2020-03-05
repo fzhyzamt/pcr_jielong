@@ -259,6 +259,27 @@
                 pcr.DATA_ARRAY = data.data;
                 pcr.SAME_META = [];
                 data.sameMeta.forEach(arr => pcr.SAME_META.push(new Set(arr)));
+                pcr.DATA_MAP = {
+                    head: {},
+                    tail: {}
+                };
+                pcr.DATA_ARRAY.forEach(e => {
+                    let headArray, tailArray;
+
+                    pcr.SAME_META.forEach(set => {
+                        if (!set.has(e.head)) return;
+                        set.forEach(meta => {
+                            if (pcr.DATA_MAP.head[meta]) headArray = pcr.DATA_MAP.head[meta];
+                        });
+                    });
+
+                    headArray = headArray || pcr.DATA_MAP.head[e.head] || [];
+                    tailArray = pcr.DATA_MAP.tail[e.tail] || [];
+                    headArray.push(e);
+                    tailArray.push(e);
+                    pcr.DATA_MAP.head[e.head] = headArray;
+                    pcr.DATA_MAP.tail[e.tail] = tailArray;
+                });
                 initData();
             });
 
@@ -350,12 +371,11 @@
                 } else {
                     pcr.preWord = word;
                     dataArray = [];
-                    pcr.DATA_ARRAY.forEach(e => {
-                        if (isMatchWord(e, word)) {
-                            // 复制对象，确保后续修改不影响源数据
-                            dataArray.push(Object.assign({}, e));
-                        }
+                    eachMatchedWord(word, 1, e => {
+                        // 复制对象，确保后续修改不影响源数据
+                        dataArray.push(Object.assign({}, e));
                     });
+
                     if (pcr.focusTarget) {
                         pcr.preData = splitDataArray(dataArray);
                     } else {
@@ -385,7 +405,7 @@
             };
             dataArray.forEach(data => {
                 let unClickSet = new Set();
-                eachMatchedWord(data, pcr.showNextUnClick, nextData => {
+                eachMatchedWord(data.tail, pcr.showNextUnClick, nextData => {
                     if (isUnClicked(nextData.name, nextData.iconID)) {
                         unClickSet.add(nextData.iconID + nextData.name);
                     }
@@ -437,7 +457,7 @@
             }
             deep++;
             let minDeep = -1;
-            eachMatchedWord(data, 1, nextData => {
+            eachMatchedWord(data.tail, 1, nextData => {
                 let nextDeep = isRoad(nextData, deep);
                 if (nextDeep > 0) {
                     minDeep = minDeep == -1 ? nextDeep : Math.min(minDeep, nextDeep);
@@ -503,19 +523,16 @@
                     </div>`
         }
 
-        // TODO 将结果缓存
-        function eachMatchedWord(data, loop, func) {
-            for (let i in pcr.DATA_ARRAY) {
-                let nextData = pcr.DATA_ARRAY[i];
-                if (!isMatchWord(nextData, data.tail)) {
-                    continue;
-                }
+        function eachMatchedWord(tail, loop, func) {
+            const array = pcr.DATA_MAP.head[tail];
+
+            array.forEach(nextData => {
                 if (loop > 1) {
                     eachMatchedWord(nextData, loop - 1, func);
                 } else {
                     func(nextData);
                 }
-            }
+            });
         }
 
         // 如果删除成功返回true，不存在返回false
