@@ -169,7 +169,9 @@
             <label><input id="disableRightClick" type="checkbox" checked="checked" />禁用右键菜单</label>
             <span class="v-split"></span>
             <label><input id="grayUnClick" type="checkbox" />灰度显示未点击</label>
-            <span class="v-spiit"></span>
+            <span class="v-split"></span>
+            <label><input id="unClickAlwayHead" type="checkbox" />未点击始终在前</label>
+            <span class="v-split"></span>
             <label>
                 显示接下来第
                 <select id="showNextUnClick">
@@ -189,6 +191,7 @@
         </footer>
     </div>
     <script>
+        // 大写为常量, 不应修改
         const pcr = new Object;
         window.pcr = pcr; // root
         pcr.MAX_FIND_DEEP = 4;
@@ -332,6 +335,11 @@
         $("#grayUnClick").change(e => {
             pcr.grayShowUnClick = e.currentTarget.checked;
             reDraw();
+        });
+
+        $("#unClickAlwayHead").change(e => {
+            pcr.unClickAlwayHead = e.currentTarget.checked;
+            reProcess();
         })
 
         function changeMode(mode) {
@@ -359,6 +367,7 @@
                 process(divText);
             });
             pcr.showNextUnClick = parseInt($("#showNextUnClick").val());
+            pcr.unClickAlwayHead = $("#unClickAlwayHead").prop("checked");
             $(document).bind('contextmenu', e => false); // 为了支持右键点击, 禁用右键菜单
             changeMode(pcr.mode);
             $("#popWindow").addClass("hide");
@@ -433,9 +442,22 @@
         function sortDataArray(dataArray) {
             if (dataArray == null) return;
             dataArray.sort((l, r) => {
-                if (isUnClicked(l)) return -1;
-                if (isUnClicked(r)) return 1;
-                return r.nextUnClick - l.nextUnClick
+                // 未点击的始终排在最前
+                if (pcr.unClickAlwayHead) {
+                    const lUnClick = isUnClicked(l), rUnClick = isUnClicked(r);
+                    if (lUnClick && !rUnClick) return -1;
+                    if (rUnClick && !lUnClick) return 1;
+                }
+
+                // 之后按下一步未点数量排序, 如果未启用下一步计算则跳过
+                if (r.nextUnClick > l.nextUnClick) return 1;
+                if (l.nextUnClick > r.nextUnClick) return -1;
+
+                // 最后按目标进度排序
+                if (pcr.focusTarget) {
+                    return l.deep - r.deep;
+                }
+                return l.iconID - r.iconID;
             });
         }
 
@@ -534,7 +556,7 @@
             const gameDiv = $('#game');
             gameDiv.empty();
             gameDiv.append(htmlArray.join(''))
-                .children().mousedown(e => pcr.MODE_CONFIG[pcr.mode].clickEvent(e));
+                .children('.grid').mousedown(e => pcr.MODE_CONFIG[pcr.mode].clickEvent(e));
         }
 
         function buildShowDiv(config) {
