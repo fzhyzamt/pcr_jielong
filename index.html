@@ -116,6 +116,10 @@
             margin: 1px;
         }
 
+        #game .all-clicked {
+            background-color: #ADA;
+        }
+
         .hide {
             display: none;
         }
@@ -446,8 +450,6 @@
         }
 
         // 返回到达目标节点所需的次数，返回-1表示不可达
-        // 完全遍历笛卡尔积，时间复杂度爆表，小霸王卡爆，没jo了等4吧
-        // 或者把源数据换成MAP抢救一下
         function isRoad(data, deep) {
             if (isMatchWord(pcr.focusTarget, data.tail)) {
                 return deep;
@@ -482,31 +484,39 @@
                 .map((i, v) => v.innerText === pcr.preWord ? v : undefined)
                 .addClass('active').siblings().removeClass('active');
 
-            const gameDiv = $('#game');
-            gameDiv.empty();
             let htmlArray = [];
+
+            // 统计当前页未点击数量
+            let unClickCount = 0;
+            function eachHandle(config) {
+                if (isUnClicked(config.name, config.iconID)) unClickCount++;
+            }
 
             // 通向标记，当显示全部时不显示
             if (pcr.focusTarget && !configData.all) {
                 htmlArray.push(`<div class="hr">通向目标"${pcr.focusTarget.name}"</div>`);
-
                 configData.focus && configData.focus.forEach(config => {
                     htmlArray.push(buildShowDiv(config, true));
+                    eachHandle(config);
                 });
 
-                if (htmlArray.length > 0) {
-                    htmlArray.push(`<div class="hr">不通向目标</div>`);
-                }
+                htmlArray.push(`<div class="hr">不通向目标</div>`);
                 configData.normal && configData.normal.forEach(config => {
                     htmlArray.push(buildShowDiv(config));
+                    eachHandle(config);
                 });
             } else {
                 // 渲染所有
                 configData.all && configData.all.forEach(config => {
                     htmlArray.push(buildShowDiv(config));
+                    eachHandle(config);
                 });
             }
+            htmlArray.splice(0, 0, `<div class="hr ${unClickCount == 0 ? 'all-clicked': ''}">
+                                                ${unClickCount == 0 ? "当前页已全部点击" : `当前页有${unClickCount}个尚未点击`}</div>`);
 
+            const gameDiv = $('#game');
+            gameDiv.empty();
             gameDiv.append(htmlArray.join(''))
                 .children().mousedown(e => pcr.MODE_CONFIG[pcr.mode].clickEvent(e));
         }
