@@ -1,8 +1,10 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0" />
     <script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"></script>
 
     <style>
@@ -10,9 +12,16 @@
             text-align: center;
         }
 
+        div {
+            display: flex;
+        }
+
         #container {
-            width: 700px;
+            width: 100%;
+            min-width: 300px;
+            max-width: 700px;
             margin: 10px auto;
+            flex-direction: column;
         }
 
         #popWindow {
@@ -25,18 +34,11 @@
             background-color: rgba(255, 255, 255, .2);
         }
 
-        .clearfix {
-            clear: both;
-        }
-
-        .clearfix::after {
-            content: '';
-            display: block;
-            clear: both;
+        #modeSelector {
+            flex-direction: inherit;
         }
 
         #modeSelector .tab {
-            float: left;
             padding: 5px 20px;
             background: #EEE;
             border-top: 1px solid;
@@ -62,36 +64,49 @@
 
         #util {
             padding: 5px 10px;
-            text-align: left;
             background-color: #FFE;
+            flex-wrap: wrap;
         }
 
         #meta {
             width: 100%;
             margin: 0px auto;
             line-height: 30px;
+            display: flex;
+            flex-wrap: wrap;
         }
 
         #meta>div {
-            float: left;
-            width: 50px;
-            height: 30px;
+            min-width: 11.11%;
+            justify-content: center;
             background-color: #EEE;
-            align-self: center;
             cursor: pointer;
+            box-sizing: border-box;
+            border-right: 1px solid #FFE;
+            border-bottom: 1px solid #FFE;
         }
 
         #meta>div:hover {
             background-color: #CCC;
         }
 
+        #meta>div.active {
+            background-color: #CCC;
+        }
+
         #game {
-            min-height: 100px;
+            min-height: 600px;
             width: 100%;
+            flex-wrap: wrap;
+            align-content: flex-start;
+        }
+
+        #game .hr {
+            width: 100%;
+            justify-content: center;
         }
 
         #game>.grid {
-            float: left;
             height: 80px;
         }
 
@@ -119,11 +134,8 @@
 
         .v-split {
             padding: 12px 6px 0px 6px;
-
             margin-left: 6px;
-
             border-left: 1px solid #000;
-
             font-size: 0;
         }
     </style>
@@ -135,7 +147,7 @@
     <div id="container">
         <img src="https://i.loli.net/2020/03/03/sIZwimkEDNQ82Yl.png" style="display: none;width: 0;height: 0;">
         <div id="modeSelector">
-            <div class="clearfix">
+            <div>
                 <div class="tab" id="gameMode">游戏模式</div>
                 <div class="tab" id="markMode">标记模式</div>
                 <div class="tab" id="targetMode"><s>目标追踪</s></div>
@@ -143,11 +155,10 @@
             <div class="help"></div>
         </div>
         <div id="util">
-            <input id="clearClickHistory" type="button" value="清除点击记录" />
-            <input id="showName" type="checkbox" /> <label for="showName">显示名称</label>
+            <button id="clearClickHistory" value="">清除点击记录</button>
+            <label><input id="showName" type="checkbox" />显示名称</label>
             <span class="v-split"></span>
-            <input id="disableRightClick" type="checkbox" checked="checked" /> <label
-                for="disableRightClick">禁用右键菜单</label>
+            <label><input id="disableRightClick" type="checkbox" checked="checked" />禁用右键菜单</label>
             <span class="v-split"></span>
             <label>
                 显示接下来第
@@ -158,8 +169,8 @@
                 次时的未点击物
             </label>
         </div>
-        <div id="meta" class="clearfix">Loading...</div>
-        <div id="game" class="clearfix"></div>
+        <div id="meta">Loading...</div>
+        <div id="game"></div>
         <footer>
             <span>图片来源：<a target="_blank" href="https://redive.estertion.win/">干炸里脊資源站</a></span>
             <br />
@@ -447,20 +458,24 @@
         }
 
         function draw(configData) {
+            $(`#meta>div:contains('${pcr.preWord}')`)
+                .map((i, v) => v.innerText === pcr.preWord ? v : undefined)
+                .addClass('active').siblings().removeClass('active');
+
             const gameDiv = $('#game');
             gameDiv.empty();
             let htmlArray = [];
 
             // 通向标记，当显示全部时不显示
             if (pcr.focusTarget && !configData.all) {
-                htmlArray.push(`<div>通向目标"${pcr.focusTarget.name}"</div>`);
+                htmlArray.push(`<div class="hr">通向目标"${pcr.focusTarget.name}"</div>`);
 
                 configData.focus && configData.focus.forEach(config => {
                     htmlArray.push(buildShowDiv(config, true));
                 });
 
                 if (htmlArray.length > 0) {
-                    htmlArray.push(`<div class="clearfix">不通向目标</div>`);
+                    htmlArray.push(`<div class="hr">不通向目标</div>`);
                 }
                 configData.normal && configData.normal.forEach(config => {
                     htmlArray.push(buildShowDiv(config));
