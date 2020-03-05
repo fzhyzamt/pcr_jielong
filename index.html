@@ -168,7 +168,7 @@
             <span class="v-split"></span>
             <label><input id="disableRightClick" type="checkbox" checked="checked" />禁用右键菜单</label>
             <span class="v-split"></span>
-            <label><input id="grayUnClick" type="checkbox"/>灰度显示未点击</label>
+            <label><input id="grayUnClick" type="checkbox" />灰度显示未点击</label>
             <span class="v-spiit"></span>
             <label>
                 显示接下来第
@@ -379,12 +379,12 @@
 
             // 让出执行权渲染遮罩
             setTimeout(() => {
-                let dataArray;
                 if (word == null) {
                     pcr.preData = {
                         all: [...pcr.DATA_ARRAY]
                     };
                 } else {
+                    let dataArray;
                     pcr.preWord = word;
                     dataArray = [];
                     eachMatchedWord(word, 1, e => {
@@ -400,9 +400,10 @@
                         };
                     }
                 }
-                calcNextUnClick(pcr.preData.all);
-                calcNextUnClick(pcr.preData.focus);
-                calcNextUnClick(pcr.preData.normal);
+                [pcr.preData.all, pcr.preData.focus, pcr.preData.normal].forEach(dataArray => {
+                    calcNextUnClick(dataArray);
+                    sortDataArray(dataArray);
+                });
 
                 draw(pcr.preData);
                 $("#popWindow").addClass("hide");
@@ -410,9 +411,8 @@
         }
 
         function calcNextUnClick(dataArray) {
-            if (dataArray == null) {
-                return;
-            }
+            if (dataArray == null) return;
+
             if (pcr.showNextUnClick == 0) {
                 dataArray.forEach(data => {
                     data.nextUnClick = 0;
@@ -422,13 +422,21 @@
             dataArray.forEach(data => {
                 let unClickSet = new Set();
                 eachMatchedWord(data.tail, pcr.showNextUnClick, nextData => {
-                    if (isUnClicked(nextData.name, nextData.iconID)) {
+                    if (isUnClicked(nextData)) {
                         unClickSet.add(nextData.iconID + nextData.name);
                     }
                 });
                 data.nextUnClick = unClickSet.size;
             });
-            dataArray.sort((l, r) => r.nextUnClick - l.nextUnClick);
+        }
+
+        function sortDataArray(dataArray) {
+            if (dataArray == null) return;
+            dataArray.sort((l, r) => {
+                if (isUnClicked(l)) return -1;
+                if (isUnClicked(r)) return 1;
+                return r.nextUnClick - l.nextUnClick
+            });
         }
 
         function splitDataArray(dataArray) {
@@ -464,12 +472,9 @@
 
         // 返回到达目标节点所需的次数，返回-1表示不可达
         function isRoad(data, deep) {
-            if (isMatchWord(pcr.focusTarget, data.tail)) {
-                return deep;
-            }
-            if (deep >= pcr.MAX_FIND_DEEP) {
-                return -1;
-            }
+            if (isMatchWord(pcr.focusTarget, data.tail)) return deep;
+            if (deep >= pcr.MAX_FIND_DEEP) return -1;
+
             deep++;
             let minDeep = -1;
             eachMatchedWord(data.tail, 1, nextData => {
@@ -482,9 +487,7 @@
         }
 
         function isMatchWord(e, selectWord) {
-            if (selectWord == null || e.head === selectWord) {
-                return true;
-            }
+            if (selectWord == null || e.head === selectWord) return true;
             return pcr.SAME_META.some(set => set.has(selectWord) && set.has(e.head));
         }
 
@@ -502,7 +505,7 @@
             // 统计当前页未点击数量
             let unClickCount = 0;
             function eachHandle(config) {
-                if (isUnClicked(config.name, config.iconID)) unClickCount++;
+                if (isUnClicked(config)) unClickCount++;
             }
 
             // 通向标记，当显示全部时不显示
@@ -525,7 +528,7 @@
                     eachHandle(config);
                 });
             }
-            htmlArray.splice(0, 0, `<div class="hr ${unClickCount == 0 ? 'all-clicked': ''}">
+            htmlArray.splice(0, 0, `<div class="hr ${unClickCount == 0 ? 'all-clicked' : ''}">
                                                 ${unClickCount == 0 ? "当前页已全部点击" : `当前页有${unClickCount}个尚未点击`}</div>`);
 
             const gameDiv = $('#game');
@@ -536,7 +539,7 @@
 
         function buildShowDiv(config) {
             return `<div class="grid" data-head="${config.head}" data-tail="${config.tail}" data-name="${config.name}" data-icon-id="${config.iconID}" >
-                    <div class="icon ${pcr.grayShowUnClick && isUnClicked(config.name, config.iconID) ? 'gray-scale': ''}" icon-id="${config.iconID}">
+                    <div class="icon ${pcr.grayShowUnClick && isUnClicked(config) ? 'gray-scale' : ''}" icon-id="${config.iconID}">
                         ${isClicked(config.name, config.iconID) ? '<img src="https://fzhyzamt.github.io/pcr_jielong/dui.png" class="clicked"/>' : ""}
                         ${pcr.showName ? `<span>${config.name}</span>` : ''}
                         ${isFocusTarget(config.name, config.iconID) ? targetIcon() : ''}
@@ -568,16 +571,15 @@
         }
         // 添加成功返回true，已存在返回false
         function addClickHistory(name, iconID) {
-            if (isClicked(name, iconID)) {
-                return false;
-            }
+            if (isClicked(name, iconID)) return false;
+
             pcr.clickHistory.add(iconID + name);
             localStorage.setItem("clickedHistory", JSON.stringify(Array.from(pcr.clickHistory)));
             return true;
         }
 
-        function isUnClicked(name, iconID) {
-            return !isClicked(name, iconID);
+        function isUnClicked(config) {
+            return !isClicked(config.name, config.iconID);
         }
 
         function isClicked(name, iconID) {
