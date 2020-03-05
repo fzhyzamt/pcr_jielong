@@ -576,7 +576,7 @@
 
             array.forEach(nextData => {
                 if (loop > 1) {
-                    eachMatchedWord(nextData, loop - 1, func);
+                    eachMatchedWord(nextData.tail, loop - 1, func);
                 } else {
                     func(nextData);
                 }
