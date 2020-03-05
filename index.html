@@ -168,6 +168,7 @@
                 显示接下来第
                 <select id="showNextUnClick">
                     <option>0</option>
+                    <option>1</option>
                     <option>2</option>
                 </select>
                 次时的未点击物
@@ -194,7 +195,7 @@
         pcr.MODE_CONFIG = {
             'gameMode': {
                 alwayDrawAll: false,
-                help: '左键点击图片将标记为已选择过并显示其接龙, 右键单击图片将不标记仅继续接龙, 用于非玩家回合时使用。',
+                help: '左键点击图片将标记为已选择过并显示其接龙, 右键单击图片将不标记仅继续接龙, <s>用于非玩家回合时使用。</s>(才知道100%成就好像不需要玩家亲自点击, 我傻了)',
                 clickEvent: function (e) {
                     const tailWord = e.currentTarget.dataset.tail;
                     const name = e.currentTarget.dataset.name;
@@ -327,7 +328,7 @@
             pcr.mode = mode;
 
             $(`#modeSelector #${mode}`).addClass('active').siblings().removeClass('active');
-            $('#modeSelector .help').text(conf.help);
+            $('#modeSelector .help').html(`<span>${conf.help}</span>`);
 
             if (conf.alwayDrawAll) {
                 process(null);
