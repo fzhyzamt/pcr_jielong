@@ -370,6 +370,15 @@
      gameDiv.empty();
      gameDiv.append(htmlArray.join(''))
          .children('.grid').mousedown(e => pcr.MODE_CONFIG[pcr.mode].clickEvent(e));
+     if (pcr.mode == 'markMode') gameDiv.children('.grid').dblclick(e => {
+         const name = e.currentTarget.dataset.name;
+         const iconID = e.currentTarget.dataset.iconId;
+         if (isClicked(name, iconID))
+             pcr.DATA_ARRAY.forEach(element => { if (element.iconID == iconID) removeClickHistory(element.name, element.iconID); });
+         else
+             pcr.DATA_ARRAY.forEach(element => { if (element.iconID == iconID) addClickHistory(element.name, element.iconID); });
+         reDraw();
+    });
  }
 
  function buildShowDiv(config) {
