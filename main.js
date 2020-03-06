@@ -74,7 +74,7 @@
      }
  };
 
- $.ajax('https://pcr.fzhyzamt.ml/data.json')
+ $.ajax('data.json')
      .done(data => {
          pcr.META = data.meta;
          pcr.DATA_ARRAY = data.data;
