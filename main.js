@@ -102,6 +102,8 @@
              pcr.DATA_MAP.tail[e.tail] = tailArray;
          });
          initData();
+     }).catch(() => {
+         $("#meta").text('加载data.json失败，请刷新页面。');
      });
 
  $("#modeSelector #gameMode").click(e => {
