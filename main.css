@@ -108,6 +108,10 @@ div {
   height: 78px;
   width: 78px;
   margin: 1px;
+  display: flex;
+  justify-content: space-between;
+  font-weight: bold;
+  text-shadow: 0 0 5px white;
 }
 
 #game .all-clicked {
