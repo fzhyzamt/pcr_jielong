@@ -130,7 +130,7 @@
 
         .icon {
             position: relative;
-            background-image: url(https://i.loli.net/2020/03/03/sIZwimkEDNQ82Yl.png);
+            background-image: url(icons.png);
         }
 
         .clicked {
@@ -147,13 +147,12 @@
             font-size: 0;
         }
     </style>
-    <link rel="stylesheet" href="https://fzhyzamt.github.io/pcr_jielong/icon.css">
+    <link rel="stylesheet" href="icon.css">
 </head>
 
 <body>
     <div id="popWindow"></div>
     <div id="container">
-        <img src="https://i.loli.net/2020/03/03/sIZwimkEDNQ82Yl.png" style="display: none;width: 0;height: 0;">
         <div id="modeSelector">
             <div>
                 <div class="tab" id="gameMode">游戏模式</div>
@@ -267,7 +266,7 @@
             }
         };
 
-        $.ajax('https://fzhyzamt.github.io/pcr_jielong/data.json')
+        $.ajax('data.json')
             .done(data => {
                 pcr.META = data.meta;
                 pcr.DATA_ARRAY = data.data;
@@ -562,7 +561,7 @@
         function buildShowDiv(config) {
             return `<div class="grid" data-head="${config.head}" data-tail="${config.tail}" data-name="${config.name}" data-icon-id="${config.iconID}" >
                     <div class="icon ${pcr.grayShowUnClick && isUnClicked(config) ? 'gray-scale' : ''}" icon-id="${config.iconID}">
-                        ${isClicked(config.name, config.iconID) ? '<img src="https://fzhyzamt.github.io/pcr_jielong/dui.png" class="clicked"/>' : ""}
+                        ${isClicked(config.name, config.iconID) ? '<img src="dui.png" class="clicked"/>' : ""}
                         ${pcr.showName ? `<span>${config.name}</span>` : ''}
                         ${isFocusTarget(config.name, config.iconID) ? targetIcon() : ''}
                         ${config.deep ? `<span>需${config.deep}步</span>` : ''}
