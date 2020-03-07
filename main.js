@@ -51,6 +51,15 @@ pcr.MODE_CONFIG = {
                 default:
                     break;
             }
+        },
+        dblclickEvent: function (e) {
+            const name = e.currentTarget.dataset.name;
+            const iconID = e.currentTarget.dataset.iconId;
+            // if (isClicked(name, iconID))
+            //     pcr.DATA_ARRAY.forEach(element => { if (element.iconID == iconID) removeClickHistory(element.name, element.iconID); });
+            // else
+            pcr.DATA_ARRAY.forEach(element => { if (element.iconID == iconID) addClickHistory(element.name, element.iconID); });
+            reDraw();
         }
     },
     'targetMode': {
@@ -238,15 +247,42 @@ function calcNextUnClick(dataArray) {
         })
         return;
     };
-    dataArray.forEach(data => {
-        let unClickSet = new Set();
-        eachMatchedWord(data.tail, pcr.showNextUnClick, nextData => {
-            if (isUnClicked(nextData)) {
-                unClickSet.add(nextData.iconID + nextData.name);
-            }
+    /*  下一步能选到的new词汇
+    /   因为下一步是嘉夜进行选词，所以需要过滤掉公主连接词汇来计算new的数量
+    */
+    if (pcr.showNextUnClick == 1) {
+        dataArray.forEach(data => {
+            let unClickSet = new Set();
+            let allReachableSet = new Set();
+            //笨蛋嘉夜不会选公主连接词汇，第一层要过滤掉
+            eachSuitableWord(data.tail, e => e.type != "puricone", dataL1 => {
+                if (isUnClicked(dataL1)) unClickSet.add(dataL1.iconID + dataL1.name);
+                allReachableSet.add(dataL1.iconID + dataL1.name)
+            })
+            //小数不好显示，所以*100划成了整数
+            data.nextUnClick = Math.round((unClickSet.size / allReachableSet.size) * 100);
         });
-        data.nextUnClick = unClickSet.size;
-    });
+    }
+    /*  下两步能选到的new词汇
+    /   因为下一步是嘉夜选词，而下两步是玩家选词，
+    /   所以需要在第一层过滤掉公主连接词汇（嘉夜不会选），第二层正常全部计算
+    */
+    if (pcr.showNextUnClick == 2) {
+        dataArray.forEach(data => {
+            let unClickSet = new Set();
+            let allReachableSet = new Set();
+            //笨蛋嘉夜不会选公主连接词汇，第一层要过滤掉
+            eachSuitableWord(data.tail, e => e.type != "puricone", dataL1 => {
+                //第二层是玩家选，全都可以通过，cond设为true
+                eachSuitableWord(dataL1.tail, true, dataL2 => {
+                    if (isUnClicked(dataL2)) unClickSet.add(dataL2.iconID + dataL2.name);
+                    allReachableSet.add(dataL2.iconID + dataL2.name);
+                })
+            })
+            //小数不好显示，所以*100划成了整数
+            data.nextUnClick = Math.round((unClickSet.size / allReachableSet.size) * 100);
+        });
+    }
 }
 
 function sortDataArray(dataArray) {
@@ -370,15 +406,8 @@ function draw(configData) {
     gameDiv.empty();
     gameDiv.append(htmlArray.join(''))
         .children('.grid').mousedown(e => pcr.MODE_CONFIG[pcr.mode].clickEvent(e));
-    if (pcr.mode == 'markMode') gameDiv.children('.grid').dblclick(e => {
-        const name = e.currentTarget.dataset.name;
-        const iconID = e.currentTarget.dataset.iconId;
-        if (isClicked(name, iconID))
-            pcr.DATA_ARRAY.forEach(element => { if (element.iconID == iconID) removeClickHistory(element.name, element.iconID); });
-        else
-            pcr.DATA_ARRAY.forEach(element => { if (element.iconID == iconID) addClickHistory(element.name, element.iconID); });
-        reDraw();
-    });
+    //为双击事件添加回调函数
+    gameDiv.children('.grid').dblclick(e => pcr.MODE_CONFIG[pcr.mode].dblclickEvent(e));
 }
 
 function buildShowDiv(config) {
@@ -404,7 +433,15 @@ function eachMatchedWord(tail, loop, func) {
         }
     });
 }
+// 带条件地遍历所有能接上龙的词汇
+function eachSuitableWord(tail, cond, func) {
+    const array = pcr.DATA_MAP.head[tail];
 
+    array.forEach(nextData => {
+        if (!cond(nextData)) return;
+        func(nextData);
+    });
+}
 // 如果删除成功返回true，不存在返回false
 function removeClickHistory(name, iconID) {
     if (pcr.clickHistory.delete(iconID + name)) {
