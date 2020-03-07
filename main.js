@@ -274,7 +274,7 @@ function calcNextUnClick(dataArray) {
             //笨蛋嘉夜不会选公主连接词汇，第一层要过滤掉
             eachSuitableWord(data.tail, e => e.type != "puricone", dataL1 => {
                 //第二层是玩家选，全都可以通过，cond设为true
-                eachSuitableWord(dataL1.tail, true, dataL2 => {
+                eachSuitableWord(dataL1.tail, e => true, dataL2 => {
                     if (isUnClicked(dataL2)) unClickSet.add(dataL2.iconID + dataL2.name);
                     allReachableSet.add(dataL2.iconID + dataL2.name);
                 })
