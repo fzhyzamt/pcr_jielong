@@ -110,8 +110,31 @@ div {
   margin: 1px;
   display: flex;
   justify-content: space-between;
+  flex-wrap: wrap;
+  align-items: stretch;
+  align-content: space-between;
   font-weight: bold;
   text-shadow: 0 0 5px white;
+}
+
+#game .icon .normal{
+  width: 100%;
+  color: black;
+}
+
+#game .icon .great{
+  width: 100%;
+  color: darkgreen;
+}
+
+#game .icon .puricone{
+  width: 100%;
+  color: darkred;
+}
+
+#game .icon .nextUnclick{
+  font-size: 16px;
+  height:20px;
 }
 
 #game .all-clicked {
@@ -130,6 +153,7 @@ div {
   position: relative;
   background-image: url(icons.png);
 }
+
 
 .clicked {
   display: inline-block;
