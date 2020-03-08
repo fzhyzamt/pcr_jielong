@@ -83,11 +83,10 @@ pcr.MODE_CONFIG = {
     }
 };
 
-$.ajax('data.json')
+$.ajax('/data/data.json')
     .done(data => {
         pcr.META = data.meta;
         pcr.DATA_ARRAY = data.data;
-        pcr.ROAD_MAP = data.road;
         pcr.SAME_META = [];
         data.sameMeta.forEach(arr => pcr.SAME_META.push(new Set(arr)));
         pcr.DATA_MAP = {
@@ -115,6 +114,12 @@ $.ajax('data.json')
     }).catch(() => {
         $("#meta").text('加载data.json失败，请刷新页面。');
     });
+
+$.ajax('/data/road.json').done(data => {
+    pcr.ROAD_MAP = data.road;
+}).catch(() => {
+    $("#meta").text('加载road.json失败，请刷新页面。');
+});
 
 $("#modeSelector #gameMode").click(e => {
     changeMode(pcr.MODE_GAME);
@@ -418,7 +423,7 @@ function draw(configData) {
 function buildShowDiv(config) {
     return `<div class="grid" data-head="${config.head}" data-tail="${config.tail}" data-name="${config.name}" data-icon-id="${config.iconID}" >
              <div class="icon ${pcr.grayShowUnClick && isUnClicked(config) ? 'gray-scale' : ''}" icon-id="${config.iconID}">
-                 ${isClicked(config.name, config.iconID) ? '<img src="dui.png" class="clicked"/>' : ""}
+                 ${isClicked(config.name, config.iconID) ? '<img src="/img/dui.png" class="clicked"/>' : ""}
                  ${pcr.showName ? `<span class="${config.type}">${config.name}</span>` : ''}
                  ${isFocusTarget(config.name, config.iconID) ? targetIcon() : ''}
                  ${config.deep ? `<span>${config.deep}步</span>` : ''}
