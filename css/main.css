@@ -151,7 +151,7 @@ div {
 
 .icon {
   position: relative;
-  background-image: url(/img/icons.png);
+  background-image: url(../img/icons.png);
 }
 
 
