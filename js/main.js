@@ -11,7 +11,7 @@ pcr.mode = pcr.MODE_GAME;
 pcr.MODE_CONFIG = {
     'gameMode': {
         alwayDrawAll: false,
-        help: '左键点击图片将标记为已选择过并显示其接龙, 右键单击图片将不标记仅继续接龙, <s>用于非玩家回合时使用。</s>(才知道100%成就好像不需要玩家亲自点击, 我傻了)',
+        help: '左键点击图片将标记为已选择过并显示其接龙, 右键单击图片将不标记仅继续接龙',
         clickEvent: function (e) {
             const tailWord = e.currentTarget.dataset.tail;
             const name = e.currentTarget.dataset.name;
@@ -64,7 +64,7 @@ pcr.MODE_CONFIG = {
     },
     'targetMode': {
         alwayDrawAll: true,
-        help: '选择一个图片作为最终目标，游戏模式中将会进行追踪。深度超过3就卡爆了，谁能jojo我。目前搜索深度为4。超过4将认为不可达。自己用了一下感觉8太行, 忘了吧.',
+        help: '左键选择一个图片作为最终目标，游戏模式中将会进行追踪。',
         clickEvent: function (e) {
             switch (e.which) {
                 case 1:
@@ -83,7 +83,7 @@ pcr.MODE_CONFIG = {
     }
 };
 
-$.ajax('https://pcr.fzhyzamt.ml/data.json')
+$.ajax('/data/data.json')
     .done(data => {
         pcr.META = data.meta;
         pcr.DATA_ARRAY = data.data;
@@ -114,6 +114,12 @@ $.ajax('https://pcr.fzhyzamt.ml/data.json')
     }).catch(() => {
         $("#meta").text('加载data.json失败，请刷新页面。');
     });
+
+$.ajax('/data/road.json').done(data => {
+    pcr.ROAD_MAP = data.road;
+}).catch(() => {
+    $("#meta").text('加载road.json失败，请刷新页面。');
+});
 
 $("#modeSelector #gameMode").click(e => {
     changeMode(pcr.MODE_GAME);
@@ -259,8 +265,8 @@ function calcNextUnClick(dataArray) {
                 if (isUnClicked(dataL1)) unClickSet.add(dataL1.iconID + dataL1.name);
                 allReachableSet.add(dataL1.iconID + dataL1.name)
             })
-            //小数不好显示，所以*100划成了整数
-            data.nextUnClick = Math.round((unClickSet.size / allReachableSet.size) * 100);
+            //保留两位小数
+            data.nextUnClick = (unClickSet.size / allReachableSet.size * 100).toFixed(2);
         });
     }
     /*  下两步能选到的new词汇
@@ -274,13 +280,13 @@ function calcNextUnClick(dataArray) {
             //笨蛋嘉夜不会选公主连接词汇，第一层要过滤掉
             eachSuitableWord(data.tail, e => e.type != "puricone", dataL1 => {
                 //第二层是玩家选，全都可以通过，cond设为true
-                eachSuitableWord(dataL1.tail, true, dataL2 => {
+                eachSuitableWord(dataL1.tail, e => true, dataL2 => {
                     if (isUnClicked(dataL2)) unClickSet.add(dataL2.iconID + dataL2.name);
                     allReachableSet.add(dataL2.iconID + dataL2.name);
                 })
             })
-            //小数不好显示，所以*100划成了整数
-            data.nextUnClick = Math.round((unClickSet.size / allReachableSet.size) * 100);
+            //保留两位小数
+            data.nextUnClick = (unClickSet.size / allReachableSet.size * 100).toFixed(2);
         });
     }
 }
@@ -342,19 +348,23 @@ function splitDataArray(dataArray) {
 
 // 返回到达目标节点所需的次数，返回-1表示不可达
 function isRoad(data, deep) {
-    if (isMatchWord(pcr.focusTarget, data.tail)) return deep;
-    if (deep >= pcr.MAX_FIND_DEEP) return -1;
-
-    deep++;
-    let minDeep = -1;
-    eachMatchedWord(data.tail, 1, nextData => {
-        let nextDeep = isRoad(nextData, deep);
-        if (nextDeep > 0) {
-            minDeep = minDeep == -1 ? nextDeep : Math.min(minDeep, nextDeep);
-        }
-    })
-    return minDeep;
+    return pcr.ROAD_MAP[data.tail][pcr.focusTarget.head] ? pcr.ROAD_MAP[data.tail][pcr.focusTarget.head] : -1;
 }
+
+// function isRoad(data, deep) {
+//     if (isMatchWord(pcr.focusTarget, data.tail)) return deep;
+//     if (deep >= pcr.MAX_FIND_DEEP) return -1;
+
+//     deep++;
+//     let minDeep = -1;
+//     eachMatchedWord(data.tail, 1, nextData => {
+//         let nextDeep = isRoad(nextData, deep);
+//         if (nextDeep > 0) {
+//             minDeep = minDeep == -1 ? nextDeep : Math.min(minDeep, nextDeep);
+//         }
+//     })
+//     return minDeep;
+// }
 
 function isMatchWord(e, selectWord) {
     if (selectWord == null || e.head === selectWord) return true;
@@ -413,11 +423,11 @@ function draw(configData) {
 function buildShowDiv(config) {
     return `<div class="grid" data-head="${config.head}" data-tail="${config.tail}" data-name="${config.name}" data-icon-id="${config.iconID}" >
              <div class="icon ${pcr.grayShowUnClick && isUnClicked(config) ? 'gray-scale' : ''}" icon-id="${config.iconID}">
-                 ${isClicked(config.name, config.iconID) ? '<img src="dui.png" class="clicked"/>' : ""}
-                 ${pcr.showName ? `<span>${config.name}</span>` : ''}
+                 ${isClicked(config.name, config.iconID) ? '<img src="/img/dui.png" class="clicked"/>' : ""}
+                 ${pcr.showName ? `<span class="${config.type}">${config.name}</span>` : ''}
                  ${isFocusTarget(config.name, config.iconID) ? targetIcon() : ''}
-                 ${config.deep ? `<span>需${config.deep}步</span>` : ''}
-                 ${config.nextUnClick ? `<span>${config.nextUnClick}</span>` : ''}
+                 ${config.deep ? `<span>${config.deep}步</span>` : ''}
+                 ${config.nextUnClick ? `<span class="nextUnclick">${config.nextUnClick}</span>` : ''}
              </div>
              </div>`
 }
