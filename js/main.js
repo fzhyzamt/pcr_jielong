@@ -35,7 +35,7 @@ pcr.MODE_CONFIG = {
     },
     'markMode': {
         alwayDrawAll: true,
-        help: '左键点击图片将标记为已选择，右键单击图片将移除已选择标记。',
+        help: '左键点击图片将标记为已选择，双击图片将相同图片下的所有词条标记为已选择，右键单击图片将移除已选择标记',
         clickEvent: function (e) {
             const name = e.currentTarget.dataset.name;
             const iconID = e.currentTarget.dataset.iconId;
@@ -64,7 +64,7 @@ pcr.MODE_CONFIG = {
     },
     'targetMode': {
         alwayDrawAll: true,
-        help: '左键选择一个图片作为最终目标，游戏模式中将会进行追踪。',
+        help: '左键选择一个图片作为最终目标，游戏模式中将会进行追踪',
         clickEvent: function (e) {
             switch (e.which) {
                 case 1:
