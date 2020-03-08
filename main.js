@@ -259,8 +259,8 @@ function calcNextUnClick(dataArray) {
                 if (isUnClicked(dataL1)) unClickSet.add(dataL1.iconID + dataL1.name);
                 allReachableSet.add(dataL1.iconID + dataL1.name)
             })
-            //小数不好显示，所以*100划成了整数
-            data.nextUnClick = Math.round((unClickSet.size / allReachableSet.size) * 100);
+            //小数不好显示，所以*1000划成了整数
+            data.nextUnClick = Math.round((unClickSet.size / allReachableSet.size) * 1000);
         });
     }
     /*  下两步能选到的new词汇
@@ -279,8 +279,8 @@ function calcNextUnClick(dataArray) {
                     allReachableSet.add(dataL2.iconID + dataL2.name);
                 })
             })
-            //小数不好显示，所以*100划成了整数
-            data.nextUnClick = Math.round((unClickSet.size / allReachableSet.size) * 100);
+            //小数不好显示，所以*1000划成了整数
+            data.nextUnClick = Math.round((unClickSet.size / allReachableSet.size) * 1000);
         });
     }
 }
